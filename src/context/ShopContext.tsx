@@ -81,6 +81,7 @@ interface ShopContextType {
   loginUser: (email: string, name?: string) => void;
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, password?: string) => Promise<{ success: boolean; message?: string; role?: string; redirectUrl?: string; error?: string }>;
+  registerWithEmail: (fullName: string, mobile: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logoutUser: () => void;
 
   // Toast System
@@ -387,82 +388,178 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined
+          redirectTo: typeof window !== "undefined"
+            ? `${window.location.origin}/auth/callback`
+            : undefined
         }
       });
       if (error) {
-        if (error.message.includes("provider is not enabled") || error.message.includes("validation_failed")) {
-          showToast("ℹ️ Google Provider disabled in Supabase. Logging in with Email / Customer account!");
-          loginUser("customer@anushkaaknitsworld.com", "Texvalley Customer");
+        if (
+          error.message.includes("provider is not enabled") ||
+          error.message.includes("validation_failed")
+        ) {
+          showToast("Google sign-in is not enabled. Please use Email & Password.");
         } else {
-          showToast(`❌ Google Auth: ${error.message}`);
+          showToast(`Google sign-in error: ${error.message}`);
         }
-      } else {
-        showToast("🚀 Redirecting to Google Authentication...");
       }
+      // On success, browser redirects automatically — no further action needed
     } catch {
-      showToast("ℹ️ Logging in via customer account fallback...");
-      loginUser("customer@anushkaaknitsworld.com", "Texvalley Customer");
+      showToast("Google sign-in is unavailable. Please use Email & Password.");
     }
   };
 
   const loginWithEmail = async (email: string, password = "") => {
-    // 1. Super Admin Role Check (ANUSHKAA ADMIN)
-    if (email.toLowerCase().trim() === "anushkaa@gmail.com") {
-      if (password === "anushkaa123") {
-        setUser({
-          name: "ANUSHKAA ADMIN",
-          email: "anushkaa@gmail.com",
-          phone: "+91 9566396667",
-          role: "SUPER_ADMIN",
-          walletBalance: 0
-        });
-        setRole("Admin");
-        showToast("👑 Welcome, ANUSHKAA ADMIN (SUPER_ADMIN)!");
-        return { success: true, role: "SUPER_ADMIN", redirectUrl: "/admin" };
-      } else {
+    try {
+      // 1. Supabase Auth — works for ALL users (admin + customer)
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error || !data.user) {
         return { success: false, error: "Invalid email or password." };
       }
-    }
 
-    // 2. Customer Credentials / Supabase Auth Check
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      // 2. Fetch role & status from profiles table (source of truth)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, mobile_number, email, role, status")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+
+      const userRole = profile?.role || "CUSTOMER";
+      const userName =
+        profile?.full_name ||
+        data.user.user_metadata?.full_name ||
+        email.split("@")[0];
+
+      // Blocked account
+      if (profile?.status === "SUSPENDED" || profile?.status === "INACTIVE") {
+        await supabase.auth.signOut();
+        return { success: false, error: "Your account has been suspended. Please contact support." };
+      }
+
+      // 3. Update last_login (fire & forget)
+      if (profile) {
+        supabase
+          .from("profiles")
+          .update({ last_login: new Date().toISOString() })
+          .eq("user_id", data.user.id)
+          .then(() => {});
+      }
+
+      // 4. Set user state from profiles data
+      setUser({
+        name:          userName,
+        email:         profile?.email || data.user.email || email,
+        phone:         profile?.mobile_number || "",
+        role:          userRole === "SUPER_ADMIN" ? "SUPER_ADMIN" : "Customer",
+        walletBalance: 0
       });
 
-      if (error) {
-        if (password && password.length >= 6) {
-          setUser({
-            name: email.split("@")[0],
-            email,
-            phone: "+91 9442707630",
-            role: "Customer",
-            walletBalance: 200
-          });
-          setRole("Customer");
-          showToast(`Welcome back, ${email}!`);
-          return { success: true, role: "CUSTOMER", redirectUrl: "/account" };
-        }
-        return { success: false, error: "Invalid email or password." };
-      }
-
-      if (data.user) {
-        setUser({
-          name: data.user.user_metadata?.full_name || email.split("@")[0],
-          email: data.user.email || email,
-          phone: "+91 9442707630",
-          role: "Customer",
-          walletBalance: 200
-        });
+      // 5. Route by role
+      if (userRole === "SUPER_ADMIN") {
+        setRole("Admin");
+        showToast(`👑 Welcome, ${userName}!`);
+        return { success: true, role: "SUPER_ADMIN", redirectUrl: "/admin" };
+      } else {
         setRole("Customer");
-        showToast(`Welcome back, ${email}!`);
-        return { success: true, role: "CUSTOMER", redirectUrl: "/account" };
+        showToast(`Welcome back, ${userName.split(" ")[0]}!`);
+        return { success: true, role: "CUSTOMER", redirectUrl: "/account/dashboard" };
       }
-      return { success: false, error: "Invalid email or password." };
     } catch {
       return { success: false, error: "Invalid email or password." };
+    }
+  };
+
+  const registerWithEmail = async (
+    fullName: string,
+    mobile:   string,
+    email:    string,
+    password: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const normEmail  = email.toLowerCase().trim();
+      const normMobile = mobile.trim();
+
+      // 1. Pre-check uniqueness via DB function (source of truth = profiles table)
+      const { data: avail, error: checkErr } = await supabase.rpc(
+        "check_registration_availability",
+        { p_email: normEmail, p_mobile: normMobile }
+      );
+
+      if (!checkErr && avail) {
+        if (avail.email_taken) {
+          return { success: false, error: "An account with this email address already exists." };
+        }
+        if (avail.mobile_taken) {
+          return { success: false, error: "This mobile number is already registered to another account." };
+        }
+      }
+
+      // 2. Create Supabase Auth user
+      const { data: authData, error: authErr } = await supabase.auth.signUp({
+        email:    normEmail,
+        password,
+        options: {
+          data: { full_name: fullName.trim() }
+        }
+      });
+
+      if (authErr) {
+        const msg = authErr.message.toLowerCase();
+        if (msg.includes("already registered") || msg.includes("already exists")) {
+          return { success: false, error: "An account with this email address already exists." };
+        }
+        return { success: false, error: authErr.message };
+      }
+
+      if (!authData.user) {
+        return { success: false, error: "Registration failed. Please try again." };
+      }
+
+      // 3. Insert / upsert profile in profiles table
+      //    (trigger may have already created a basic record — upsert handles both)
+      const { error: profileErr } = await supabase.from("profiles").upsert(
+        {
+          user_id:       authData.user.id,
+          full_name:     fullName.trim(),
+          mobile_number: normMobile,
+          email:         normEmail,
+          role:          "CUSTOMER",
+          status:        "ACTIVE"
+        },
+        { onConflict: "user_id" }
+      );
+
+      if (profileErr) {
+        console.error("Profile creation error:", profileErr);
+        if (profileErr.code === "23505") {
+          if (profileErr.message.includes("mobile")) {
+            return { success: false, error: "This mobile number is already registered to another account." };
+          }
+          if (profileErr.message.includes("email")) {
+            return { success: false, error: "An account with this email address already exists." };
+          }
+        }
+        // Profile failed but auth user created — don't block registration
+        // User can sign in and profile will be auto-completed via trigger
+      }
+
+      // 4. Set user state if session is immediately available (email confirmation disabled)
+      if (authData.session) {
+        setUser({
+          name:          fullName.trim(),
+          email:         normEmail,
+          phone:         normMobile,
+          role:          "Customer",
+          walletBalance: 0
+        });
+        setRole("Customer");
+      }
+
+      showToast(`🎉 Welcome to ANUSHKAA KNITS WORLD, ${fullName.split(" ")[0]}!`);
+      return { success: true };
+    } catch {
+      return { success: false, error: "Registration failed. Please try again." };
     }
   };
 
@@ -505,6 +602,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginUser,
         loginWithGoogle,
         loginWithEmail,
+        registerWithEmail,
         logoutUser,
         toastMessage,
         showToast,

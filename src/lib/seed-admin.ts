@@ -1,50 +1,53 @@
+/**
+ * Seed Admin Utility
+ *
+ * Verifies the SUPER_ADMIN profile exists in the `profiles` table.
+ * The actual admin auth user + profile are created by the SQL migration:
+ *   supabase/migrations/001_profiles_and_addresses.sql
+ *
+ * This script is a safety check only — it does NOT hardcode passwords.
+ */
+
 import { supabase } from "./supabase";
 
-export interface UserAccount {
-  id: string;
-  name: string;
-  email: string;
-  passwordHash: string;
-  role: "SUPER_ADMIN" | "CUSTOMER";
-  status: "Active" | "Inactive";
-}
-
-// Pre-hashed bcrypt equivalent hash for 'anushkaa123'
-// Salted hash structure: $2b$10$7zE/U7p2u1...
-export const DEFAULT_SUPER_ADMIN: UserAccount = {
-  id: "admin-super-01",
-  name: "ANUSHKAA ADMIN",
-  email: "anushkaa@gmail.com",
-  // Hashed representation of 'anushkaa123' (Never stored in plaintext)
-  passwordHash: "$2b$10$uDk4cW.R12P2/9JzE2136uM8B4aV7Z5kQ9X0mP2136uM8B4aV7Z5k",
-  role: "SUPER_ADMIN",
-  status: "Active"
-};
-
-/**
- * Seed script to ensure the default SUPER_ADMIN account exists
- */
-export async function seedDefaultAdminAccount() {
+export async function verifySuperAdminProfile(): Promise<void> {
   try {
-    const { data: existing } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", DEFAULT_SUPER_ADMIN.email)
-      .single();
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("user_id, role, status")
+      .eq("email", "anushkaa@gmail.com")
+      .maybeSingle();
 
-    if (!existing) {
-      await supabase.from("users").insert([
-        {
-          id: DEFAULT_SUPER_ADMIN.id,
-          name: DEFAULT_SUPER_ADMIN.name,
-          email: DEFAULT_SUPER_ADMIN.email,
-          password_hash: DEFAULT_SUPER_ADMIN.passwordHash,
-          role: DEFAULT_SUPER_ADMIN.role,
-          status: DEFAULT_SUPER_ADMIN.status
-        }
-      ]);
+    if (error) {
+      // profiles table may not exist yet — migration not run
+      if (error.code === "42P01") {
+        console.warn(
+          "[AKW] ⚠️  profiles table not found. " +
+          "Please run: supabase/migrations/001_profiles_and_addresses.sql " +
+          "in your Supabase SQL Editor."
+        );
+      }
+      return;
     }
+
+    if (!profile) {
+      console.warn(
+        "[AKW] ⚠️  SUPER_ADMIN profile not found. " +
+        "Please run the SQL migration in your Supabase SQL Editor to seed the admin account."
+      );
+      return;
+    }
+
+    if (profile.role !== "SUPER_ADMIN") {
+      console.warn(
+        "[AKW] ⚠️  anushkaa@gmail.com exists but role is not SUPER_ADMIN. " +
+        "Update via: UPDATE profiles SET role = 'SUPER_ADMIN' WHERE email = 'anushkaa@gmail.com';"
+      );
+      return;
+    }
+
+    console.info("[AKW] ✅ SUPER_ADMIN profile verified.");
   } catch {
-    // Fail-safe wrapper
+    // Non-critical — silently fail in production
   }
 }

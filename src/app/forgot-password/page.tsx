@@ -2,128 +2,148 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useShop } from "@/context/ShopContext";
-import { Mail, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Mail, ArrowRight, ShieldCheck, CheckCircle2, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function ForgotPasswordPage() {
-  const { showToast } = useShop();
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [email,     setEmail]     = useState("");
+  const [loading,   setLoading]   = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error,     setError]     = useState("");
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !email.includes("@")) {
-      showToast("❌ Please enter a valid email address.");
+    setError("");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address.");
       return;
     }
-
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`
+      // Always show the same message regardless of whether account exists (privacy)
+      await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
+        redirectTo: `${window.location.origin}/reset-password`
       });
-
-      if (error) {
-        showToast(`❌ ${error.message}`);
-      } else {
-        setSubmitted(true);
-        showToast("📧 Password reset instructions sent to your email!");
-      }
+      setSubmitted(true);
     } catch {
-      showToast("❌ Unable to send password reset email. Please try again.");
+      // Still show success to avoid revealing account existence
+      setSubmitted(true);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[85vh] bg-[#F9F9FB] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-3xl border border-zinc-200 shadow-2xl space-y-8">
-        {/* Header Title & Brand Logo */}
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex flex-col items-center group">
-            <span className="font-serif text-2xl sm:text-3xl font-black tracking-widest text-[#111111] group-hover:text-[#C8A24D] transition-colors">
+    <div className="min-h-screen bg-[#F8F7F5] flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-md">
+        {/* Brand */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex flex-col items-center gap-0.5 group">
+            <span className="font-serif text-3xl font-black tracking-widest text-[#111111] group-hover:text-[#C8A24D] transition-colors">
               ANUSHKAA
             </span>
-            <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#C8A24D] -mt-1">
+            <span className="text-[9px] font-bold tracking-[0.4em] uppercase text-[#C8A24D]">
               KNITS WORLD • TEXVALLEY
             </span>
           </Link>
-          <h1 className="text-xl font-serif font-bold text-zinc-900 pt-2">
-            Reset Account Password
-          </h1>
-          <p className="text-xs text-zinc-500">
-            Enter your registered email address to receive password reset instructions.
-          </p>
         </div>
 
-        {submitted ? (
-          <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-2xl text-center space-y-3">
-            <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-            <h3 className="text-base font-bold text-emerald-900 font-serif">
-              Reset Link Sent!
-            </h3>
-            <p className="text-xs text-emerald-800 leading-relaxed">
-              We&apos;ve sent a secure password reset link to <strong>{email}</strong>. Please check your inbox and spam folder.
-            </p>
-            <Link
-              href="/login"
-              className="inline-block btn-gold px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md mt-2"
-            >
-              Return to Sign In
-            </Link>
-          </div>
-        ) : (
-          <form onSubmit={handleResetPassword} className="space-y-4 text-xs font-semibold">
-            <div className="space-y-1">
-              <label className="text-zinc-500">Email Address *</label>
-              <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400" />
-                <input
-                  type="email"
-                  required
-                  placeholder="customer@anushkaaknitsworld.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-zinc-50 border border-zinc-300 rounded-xl pl-10 pr-4 py-3 text-xs focus:outline-none focus:border-[#C8A24D]"
-                />
+        {/* Card */}
+        <div className="bg-white rounded-3xl shadow-[0_4px_40px_rgba(0,0,0,0.08)] border border-zinc-100 p-7 sm:p-9 space-y-6">
+          {submitted ? (
+            /* ── Success state ──────────────────────────── */
+            <div className="text-center space-y-4 py-4">
+              <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
               </div>
+              <div>
+                <h1 className="font-serif font-bold text-lg text-zinc-900">Check Your Email</h1>
+                <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
+                  If an account exists, a password reset link has been sent.<br />
+                  Please check your inbox and spam folder.
+                </p>
+              </div>
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 bg-[#C8A24D] hover:bg-[#b8922d] text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition-all"
+              >
+                <span>Return to Sign In</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
+          ) : (
+            /* ── Form state ─────────────────────────────── */
+            <>
+              <div className="text-center">
+                <h1 className="font-serif font-bold text-xl text-zinc-900">Reset Password</h1>
+                <p className="text-xs text-zinc-500 mt-2">
+                  Enter your registered email address to receive a password reset link.
+                </p>
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-gold py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <span>Sending Reset Link...</span>
-              ) : (
-                <>
-                  <span>Send Password Reset Email</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
+              {error && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3.5 rounded-xl font-semibold">
+                  {error}
+                </div>
               )}
-            </button>
-          </form>
-        )}
 
-        {/* Link back to Login */}
-        <div className="text-center pt-2 border-t border-zinc-100 text-xs">
-          <p className="text-zinc-500">
-            Remembered your password?{" "}
-            <Link href="/login" className="font-bold text-[#C8A24D] hover:underline">
-              Sign In Here
-            </Link>
-          </p>
+              <form onSubmit={handleReset} autoComplete="off" noValidate className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="reset-email" className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400 pointer-events-none" />
+                    <input
+                      id="reset-email"
+                      type="email"
+                      required
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={e => { setEmail(e.target.value); setError(""); }}
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-[#C8A24D] focus:ring-2 focus:ring-[#C8A24D]/10 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  id="send-reset-link"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#C8A24D] hover:bg-[#b8922d] disabled:opacity-50 text-white font-extrabold py-3.5 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-[#C8A24D]/20 transition-all"
+                >
+                  {loading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /><span>Sending Link…</span></>
+                    : <><span>Send Password Reset Link</span><ArrowRight className="w-4 h-4" /></>
+                  }
+                </button>
+              </form>
+
+              <p className="text-center text-xs text-zinc-500">
+                Remembered your password?{" "}
+                <Link href="/login" className="font-bold text-[#C8A24D] hover:underline">
+                  Sign In
+                </Link>
+              </p>
+            </>
+          )}
+
+          {/* Security badge */}
+          <div className="pt-4 border-t border-zinc-100 flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <span>256-Bit SSL • Secured by Supabase</span>
+          </div>
         </div>
 
-        {/* Security Footer */}
-        <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>256-Bit SSL Encrypted & Live Supabase Connected</span>
-        </div>
+        <p className="text-center mt-6 text-[11px] text-zinc-400">
+          <Link href="/" className="hover:text-[#C8A24D] transition-colors font-medium">
+            ← Back to ANUSHKAA KNITS WORLD
+          </Link>
+        </p>
       </div>
     </div>
   );
