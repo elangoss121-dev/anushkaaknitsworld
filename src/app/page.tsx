@@ -122,49 +122,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURED CATEGORIES GRID */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-        <div className="text-center space-y-2">
-          <span className="text-xs font-bold text-[#C8A24D] uppercase tracking-widest">
-            Curated Collections
-          </span>
-          <h2 className="text-3xl sm:text-5xl font-serif font-bold text-zinc-900 dark:text-white">
-            Explore Categories
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          {STORE_INFO.categories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/shop?category=${cat.slug}`}
-              className="group relative h-96 rounded-2xl overflow-hidden shadow-lg border border-zinc-200 dark:border-zinc-800 flex flex-col justify-end p-6"
-            >
-              <img
-                src={cat.image}
-                alt={cat.name}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-              <div className="relative z-10 space-y-1 text-white">
-                {cat.isSpecial && (
-                  <span className="bg-[#C8A24D] text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full inline-block mb-1">
-                    Hot Surplus
-                  </span>
-                )}
-                <h3 className="text-xl font-serif font-bold text-white group-hover:text-[#C8A24D] transition-colors">
-                  {cat.name}
-                </h3>
-                <p className="text-xs text-zinc-300 line-clamp-2">{cat.description}</p>
-                <span className="text-xs font-bold text-[#C8A24D] uppercase tracking-wider pt-2 inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                  Explore {cat.itemCount}+ Items →
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
 
       {/* TRENDING PRODUCTS & NEW ARRIVALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">

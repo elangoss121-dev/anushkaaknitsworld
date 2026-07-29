@@ -66,174 +66,43 @@ export const Header: React.FC = () => {
             </span>
           </Link>
 
-          {/* Desktop Mega Navigation */}
-          <div className="hidden lg:flex items-center space-x-8">
-            <Link
-              href="/"
-              className="text-xs uppercase font-bold tracking-widest text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] dark:hover:text-[#C8A24D] transition-colors py-2"
-            >
+          {/* Simplified Desktop Navigation */}
+          <div className="hidden lg:flex items-center space-x-10">
+            <Link href="/" className="text-sm uppercase font-medium tracking-widest text-zinc-800 hover:text-[#C8A24D] transition-all py-2">
               Home
             </Link>
 
-            <Link
-              href="/shop?category=t-shirts"
-              className="text-xs uppercase font-bold tracking-widest text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] dark:hover:text-[#C8A24D] transition-colors py-2"
-            >
-              T-Shirts
+            <Link href="/shop" className="text-sm uppercase font-medium tracking-widest text-zinc-800 hover:text-[#C8A24D] transition-all py-2">
+              Products
             </Link>
 
-            <Link
-              href="/shop?category=shirts"
-              className="text-xs uppercase font-bold tracking-widest text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] dark:hover:text-[#C8A24D] transition-colors py-2"
-            >
-              Shirts
+            <Link href="/cart" className="text-sm uppercase font-medium tracking-widest text-zinc-800 hover:text-[#C8A24D] transition-all py-2 flex items-center gap-2">
+              Cart
             </Link>
 
-            <Link
-              href="/shop?category=tops"
-              className="text-xs uppercase font-bold tracking-widest text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] dark:hover:text-[#C8A24D] transition-colors py-2"
-            >
-              Tops
+            {/* Login / My Account */}
+            <Link href={user ? "/account" : "/login"} className="text-sm uppercase font-medium tracking-widest text-zinc-800 hover:text-[#C8A24D] transition-all py-2">
+              {user ? "My Account" : "Login"}
             </Link>
-
-            <Link
-              href="/shop?category=hoodies"
-              className="text-xs uppercase font-bold tracking-widest text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] dark:hover:text-[#C8A24D] transition-colors py-2"
-            >
-              Hoodies
-            </Link>
-
-            {/* Export Surplus Flagship Badge */}
-            <Link
-              href="/shop?category=export-surplus"
-              className="relative text-xs uppercase font-bold tracking-widest text-zinc-900 dark:text-white hover:text-[#C8A24D] transition-colors py-2 flex items-center gap-1.5"
-            >
-              <span>Export Surplus</span>
-              <span className="bg-[#C8A24D] text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full animate-pulse shadow-sm">
-                60% OFF
-              </span>
-            </Link>
-
-            <Link
-              href="/shop?category=kids-wear"
-              className="text-xs uppercase font-bold tracking-widest text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] dark:hover:text-[#C8A24D] transition-colors py-2"
-            >
-              Kids Wear
-            </Link>
-
-            <Link
-              href="/shop?category=innerwear"
-              className="text-xs uppercase font-bold tracking-widest text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] dark:hover:text-[#C8A24D] transition-colors py-2"
-            >
-              Innerwear
-            </Link>
-
-            {role === "Admin" && (
-              <Link
-                href="/admin"
-                className="bg-[#111111] dark:bg-white text-white dark:text-[#111111] text-xs uppercase font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-[#C8A24D]"
-              >
-                <LayoutDashboard className="w-3.5 h-3.5 text-[#C8A24D]" />
-                Admin Panel
-              </Link>
-            )}
           </div>
 
-          {/* Right Action Icons */}
+          {/* Simplified Right Actions (mobile + desktop) */}
           <div className="flex items-center space-x-4">
-            {/* Search */}
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] transition-colors"
-              title="Search Products"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-
-
-
-            {/* Wishlist */}
-            <Link
-              href="/account?tab=wishlist"
-              className="relative p-2 text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] transition-colors"
-              title="Wishlist"
-            >
-              <Heart className="w-5 h-5" />
-              {wishlist.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {wishlist.length}
-                </span>
-              )}
-            </Link>
-
-            {/* Cart Drawer Icon */}
-            <Link
-              href="/cart"
-              className="relative p-2 text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] transition-colors"
-              title="Shopping Cart"
-            >
+            {/* Cart */}
+            <Link href="/cart" className="relative p-2 text-zinc-800 hover:text-[#C8A24D] transition-colors" title="Shopping Cart">
               <ShoppingBag className="w-5 h-5" />
               {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#C8A24D] text-white text-[10px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-md animate-bounce">
+                <span className="absolute -top-1 -right-1 bg-[#C8A24D] text-white text-[10px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-md">
                   {totalCartCount}
                 </span>
               )}
             </Link>
 
-            {/* User Account / Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setUserDropdown(!userDropdown)}
-                className="p-2 text-zinc-800 dark:text-zinc-200 hover:text-[#C8A24D] transition-colors flex items-center gap-1"
-              >
-                <User className="w-5 h-5" />
-              </button>
-
-              {userDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl py-2 z-50 text-sm">
-                  {user ? (
-                    <>
-                      <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-800">
-                        <p className="font-bold text-zinc-900 dark:text-white">{user.name}</p>
-                        <p className="text-xs text-zinc-500 truncate">{user.email}</p>
-                      </div>
-                      <Link
-                        href="/account"
-                        onClick={() => setUserDropdown(false)}
-                        className="block px-4 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                      >
-                        My Account & Orders
-                      </Link>
-                      <Link
-                        href="/account?tab=wallet"
-                        onClick={() => setUserDropdown(false)}
-                        className="block px-4 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                      >
-                        Store Wallet (₹{user.walletBalance})
-                      </Link>
-                      <button
-                        onClick={() => {
-                          logoutUser();
-                          setUserDropdown(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold"
-                      >
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        href="/account"
-                        onClick={() => setUserDropdown(false)}
-                        className="block px-4 py-2.5 font-bold text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 text-center"
-                      >
-                        Login / Register
-                      </Link>
-                    </>
-                  )}
-                </div>
-              )}
+            {/* Login / Account */}
+            <div>
+              <Link href={user ? "/account" : "/login"} className="text-sm font-medium text-zinc-800 hover:text-[#C8A24D] transition-all">
+                {user ? "My Account" : "Login"}
+              </Link>
             </div>
           </div>
         </div>
