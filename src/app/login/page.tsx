@@ -5,28 +5,30 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useShop } from "@/context/ShopContext";
 import {
-  Mail, Lock, Eye, EyeOff, User,
-  ArrowRight, ShieldCheck, AlertCircle,
-  CheckCircle2, Loader2, Clock
+  Mail, Lock, Eye, EyeOff, User, Phone,
+  ShieldCheck, AlertCircle, CheckCircle2, Loader2, Sparkles
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Tab = "login" | "register";
 
-// ── Password Strength ─────────────────────────────────────────────────────────
-function getPasswordStrength(p: string): { score: number; label: string; color: string } {
+// ── Password Strength Calculator ──────────────────────────────────────────────
+function getPasswordStrength(p: string): { score: number; label: string; color: string; percent: number } {
   let s = 0;
   if (p.length >= 8)          s++;
   if (/[A-Z]/.test(p))        s++;
   if (/[a-z]/.test(p))        s++;
   if (/[0-9]/.test(p))        s++;
   if (/[^A-Za-z0-9]/.test(p)) s++;
-  if (s <= 1) return { score: s, label: "Weak",   color: "#EF4444" };
-  if (s <= 3) return { score: s, label: "Medium",  color: "#F59E0B" };
-  return             { score: s, label: "Strong",  color: "#10B981" };
+
+  if (s === 0) return { score: 0, label: "", color: "#E5E7EB", percent: 0 };
+  if (s <= 2)  return { score: s, label: "Weak", color: "#EF4444", percent: 33 };
+  if (s <= 4)  return { score: s, label: "Medium", color: "#F59E0B", percent: 66 };
+  return             { score: s, label: "Strong", color: "#10B981", percent: 100 };
 }
 
-// ── Rate Limiting ─────────────────────────────────────────────────────────────
+// ── Rate Limiting Utilities ───────────────────────────────────────────────────
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS   = 5 * 60 * 1000; // 5 minutes
 
@@ -66,10 +68,10 @@ function clearRateLimit(email: string) {
   try { localStorage.removeItem(`akw_rl_${email.toLowerCase().trim()}`); } catch {}
 }
 
-// ── Google Icon ───────────────────────────────────────────────────────────────
+// ── Google Brand Icon ────────────────────────────────────────────────────────
 function GoogleIcon() {
   return (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
@@ -79,17 +81,16 @@ function GoogleIcon() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// MAIN COMPONENT
+// MAIN COMPONENT — LUXURY SPLIT AUTH PAGE
 // ══════════════════════════════════════════════════════════════════════════════
 export default function AuthPage() {
   const router = useRouter();
   const { user, role, loginWithGoogle, loginWithEmail, registerWithEmail } = useShop();
 
-  // ── Tab ───────────────────────────────────────────────────────────────────
-  const [activeTab,  setActiveTab]  = useState<Tab>("login");
-  const [isAnimating, setIsAnimating] = useState(false);
+  // ── Active Tab ────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<Tab>("login");
 
-  // ── Login ──────────────────────────────────────────────────────────────────
+  // ── Login Form State ──────────────────────────────────────────────────────
   const [loginEmail,    setLoginEmail]    = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPwd,  setShowLoginPwd]  = useState(false);
@@ -98,19 +99,19 @@ export default function AuthPage() {
   const [loginError,    setLoginError]    = useState("");
   const [lockoutMs,     setLockoutMs]     = useState(0);
 
-  // ── Register ──────────────────────────────────────────────────────────────
-  const [regName,       setRegName]       = useState("");
-  const [regMobile,     setRegMobile]     = useState("");
-  const [regEmail,      setRegEmail]      = useState("");
-  const [regPassword,   setRegPassword]   = useState("");
-  const [regConfirm,    setRegConfirm]    = useState("");
-  const [showRegPwd,    setShowRegPwd]    = useState(false);
-  const [showConfirm,   setShowConfirm]   = useState(false);
-  const [regLoading,    setRegLoading]    = useState(false);
-  const [regError,      setRegError]      = useState("");
-  const [regSuccess,    setRegSuccess]    = useState(false);
+  // ── Register Form State ───────────────────────────────────────────────────
+  const [regName,     setRegName]     = useState("");
+  const [regMobile,   setRegMobile]   = useState("");
+  const [regEmail,    setRegEmail]    = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regConfirm,  setRegConfirm]  = useState("");
+  const [showRegPwd,  setShowRegPwd]  = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [regLoading,  setRegLoading]  = useState(false);
+  const [regError,    setRegError]    = useState("");
+  const [regSuccess,  setRegSuccess]  = useState(false);
 
-  // ── Field errors ──────────────────────────────────────────────────────────
+  // ── Inline Field Error States ─────────────────────────────────────────────
   const [nameErr,    setNameErr]    = useState("");
   const [mobileErr,  setMobileErr]  = useState("");
   const [emailErr,   setEmailErr]   = useState("");
@@ -119,13 +120,13 @@ export default function AuthPage() {
 
   const strength = getPasswordStrength(regPassword);
 
-  // Read ?tab= param from URL
+  // Read URL query params (e.g. ?tab=register)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("tab") === "register") setActiveTab("register");
   }, []);
 
-  // Redirect already-authenticated users
+  // Redirect if already authenticated
   useEffect(() => {
     if (!user) return;
     if (role === "Admin" || user.role === "SUPER_ADMIN") {
@@ -135,40 +136,32 @@ export default function AuthPage() {
     }
   }, [user, role, router]);
 
-  // Lockout countdown
+  // Handle Lockout timer countdown
   useEffect(() => {
     if (lockoutMs <= 0) return;
-    const id = setInterval(() => {
+    const timer = setInterval(() => {
       setLockoutMs(prev => {
         if (prev <= 1000) { setLoginError(""); return 0; }
         return prev - 1000;
       });
     }, 1000);
-    return () => clearInterval(id);
+    return () => clearInterval(timer);
   }, [lockoutMs]);
 
-  // ── Tab switch ─────────────────────────────────────────────────────────────
-  const switchTab = (tab: Tab) => {
-    if (tab === activeTab || isAnimating) return;
-    setIsAnimating(true);
-    setTimeout(() => { setActiveTab(tab); setIsAnimating(false); }, 200);
-  };
-
-  // ── Login submit ───────────────────────────────────────────────────────────
+  // ── Submit Handlers ───────────────────────────────────────────────────────
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
 
     if (!loginEmail.trim() || !loginPassword) {
-      setLoginError("Please enter your email and password.");
+      setLoginError("Please enter both your email address and password.");
       return;
     }
 
-    // Check lockout
     const rl = getRateLimit(loginEmail);
     if (rl.locked) {
       const mins = Math.ceil(rl.remaining / 60000);
-      setLoginError(`Too many failed attempts. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.`);
+      setLoginError(`Too many failed attempts. Account locked. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.`);
       setLockoutMs(rl.remaining);
       return;
     }
@@ -186,33 +179,35 @@ export default function AuthPage() {
           setLockoutMs(LOCKOUT_MS);
         } else {
           const suffix = attemptsLeft > 0
-            ? ` (${attemptsLeft} attempt${attemptsLeft !== 1 ? "s" : ""} left before lockout)`
+            ? ` (${attemptsLeft} attempt${attemptsLeft !== 1 ? "s" : ""} left)`
             : "";
-          setLoginError((res.error || "Invalid email or password.") + suffix);
+          setLoginError((res.error || "Invalid credentials.") + suffix);
         }
       }
     } catch {
-      setLoginError("Invalid email or password.");
+      setLoginError("An unexpected error occurred. Please try again.");
     } finally {
       setLoginLoading(false);
     }
   };
 
-  // ── Register submit ────────────────────────────────────────────────────────
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError("");
     setNameErr(""); setMobileErr(""); setEmailErr(""); setPwdErr(""); setConfirmErr("");
 
-    let hasErr = false;
+    let hasError = false;
     if (!regName.trim() || regName.trim().length < 3) {
-      setNameErr("Full name must be at least 3 characters."); hasErr = true;
+      setNameErr("Full name must be at least 3 characters.");
+      hasError = true;
     }
     if (!/^[6-9]\d{9}$/.test(regMobile)) {
-      setMobileErr("Enter a valid 10-digit Indian mobile number (starts with 6–9)."); hasErr = true;
+      setMobileErr("Enter a valid 10-digit Indian mobile number.");
+      hasError = true;
     }
     if (!regEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail)) {
-      setEmailErr("Enter a valid email address."); hasErr = true;
+      setEmailErr("Enter a valid email address.");
+      hasError = true;
     }
     if (
       regPassword.length < 8 ||
@@ -221,13 +216,15 @@ export default function AuthPage() {
       !/[0-9]/.test(regPassword) ||
       !/[^A-Za-z0-9]/.test(regPassword)
     ) {
-      setPwdErr("Password must be 8+ chars with uppercase, lowercase, number & special character.");
-      hasErr = true;
+      setPwdErr("Password must contain 8+ chars with uppercase, lowercase, number & symbol.");
+      hasError = true;
     }
     if (regPassword !== regConfirm) {
-      setConfirmErr("Passwords do not match."); hasErr = true;
+      setConfirmErr("Passwords do not match.");
+      hasError = true;
     }
-    if (hasErr) return;
+
+    if (hasError) return;
 
     setRegLoading(true);
     try {
@@ -244,187 +241,481 @@ export default function AuthPage() {
     }
   };
 
-  // ── Shared UI atoms ────────────────────────────────────────────────────────
-  const GoogleButton = ({ label }: { label: string }) => (
-    <button
-      type="button"
-      onClick={loginWithGoogle}
-      className="w-full bg-white hover:bg-zinc-50 text-zinc-800 border border-zinc-200 hover:border-zinc-300 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 text-xs uppercase tracking-wider shadow-sm hover:shadow-md transition-all"
-    >
-      <GoogleIcon /><span>{label}</span>
-    </button>
-  );
-
-  const Divider = ({ text }: { text: string }) => (
-    <div className="relative flex items-center my-1">
-      <div className="flex-1 border-t border-zinc-100" />
-      <span className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest whitespace-nowrap">
-        {text}
-      </span>
-      <div className="flex-1 border-t border-zinc-100" />
-    </div>
-  );
-
-  const FieldError = ({ msg }: { msg: string }) =>
-    msg ? <p className="text-[10px] text-rose-500 font-semibold mt-1">{msg}</p> : null;
-
-  const pwdCriteria = [
-    { ok: regPassword.length >= 8,          label: "8+ characters"   },
-    { ok: /[A-Z]/.test(regPassword),        label: "Uppercase"       },
-    { ok: /[a-z]/.test(regPassword),        label: "Lowercase"       },
-    { ok: /[0-9]/.test(regPassword),        label: "Number"          },
-    { ok: /[^A-Za-z0-9]/.test(regPassword), label: "Special char"   },
-  ];
-
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#FBF9F6]">
-      <div className="sticky top-0 z-30 bg-white border-b border-zinc-100 h-[75px] flex items-center">
-        <div className="w-full px-6 max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="font-serif text-2xl font-black tracking-widest text-[#111111]">ANUSHKAA</div>
-          </Link>
+    <div className="min-h-screen w-full flex bg-[#FBF9F6] dark:bg-zinc-950">
+      
+      {/* ── LEFT SIDE (45% DESKTOP LIFESTYLE HERO IMAGE) ───────────────────── */}
+      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden bg-zinc-900 group">
+        {/* Fashion Hero Background Image */}
+        <img
+          src="https://images.unsplash.com/photo-1520975919352-6a4fa9b5f9c8?auto=format&fit=crop&w=1600&q=85"
+          alt="Luxury Knitwear Lifestyle"
+          className="w-full h-full object-cover object-center opacity-65 group-hover:scale-105 transition-transform duration-1000 ease-out"
+        />
+        
+        {/* Subtle Dark Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30" />
+
+        {/* Brand Text Content Overlay */}
+        <div className="absolute inset-0 p-12 sm:p-16 flex flex-col justify-between z-10 text-white">
+          
+          {/* Top Brand Tag */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center gap-2"
+          >
+            <span className="w-8 h-[2px] bg-[#C8A24D]" />
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#C8A24D]">
+              Luxury Knitwear Since 1998
+            </span>
+          </motion.div>
+
+          {/* Center Main Copy */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="space-y-4 max-w-md"
+          >
+            <span className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] uppercase font-bold tracking-widest text-amber-200 border border-white/20">
+              Texvalley • Erode Flagship
+            </span>
+            <h1 className="font-serif text-4xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+              ANUSHKAA <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-200 to-[#C8A24D]">
+                KNITS WORLD
+              </span>
+            </h1>
+            <p className="text-sm text-zinc-300 font-light italic leading-relaxed pt-2">
+              &quot;Crafted with Quality. Designed for Everyday Elegance.&quot;
+            </p>
+          </motion.div>
+
+          {/* Bottom Footer Quote */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="border-t border-white/15 pt-6 flex items-center justify-between text-xs text-zinc-400 font-medium"
+          >
+            <span>Organic Combed Cotton</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C8A24D]" />
+            <span>Export Surplus Hub</span>
+          </motion.div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-12 min-h-[calc(100vh-75px)]">
+      {/* ── RIGHT SIDE (55% LUXURY AUTHENTICATION CARD) ────────────────────── */}
+      <div className="w-full lg:w-[55%] flex items-center justify-center p-4 sm:p-8 lg:p-12 min-h-screen">
+        
+        <div className="w-full max-w-[520px] bg-white dark:bg-zinc-900 rounded-[24px] shadow-2xl p-6 sm:p-10 md:p-[50px] border border-zinc-100 dark:border-zinc-800 space-y-8">
+          
+          {/* Brand Mobile Logo Header (visible on smaller screens) */}
+          <div className="lg:hidden text-center pb-2">
+            <Link href="/" className="inline-block">
+              <span className="font-serif text-2xl font-black tracking-widest text-[#111111] dark:text-white">
+                ANUSHKAA
+              </span>
+              <span className="block text-[9px] font-bold tracking-[0.3em] uppercase text-[#C8A24D]">
+                KNITS WORLD • TEXVALLEY
+              </span>
+            </Link>
+          </div>
 
-          {/* Left Image */}
-          <aside className="hidden lg:block lg:col-span-5 relative overflow-hidden">
-            <img src="https://images.unsplash.com/photo-1520975919352-6a4fa9b5f9c8?auto=format&fit=crop&w=1600&q=80" alt="Luxury knitwear lifestyle" className="w-full h-full object-cover object-center transform transition-transform duration-700" />
-            <div className="absolute inset-0 bg-black/40" />
+          {/* Heading & Subtitle */}
+          <div className="text-center space-y-1.5">
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white tracking-tight">
+              {activeTab === "login" ? "Welcome Back" : "Create Your Account"}
+            </h2>
+            <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-light">
+              {activeTab === "login"
+                ? "Sign in to continue shopping."
+                : "Join us and enjoy premium quality knitwear."}
+            </p>
+          </div>
 
-            <div className="absolute inset-0 flex items-center justify-center p-12">
-              <div className="text-white text-center space-y-4 max-w-xs">
-                <h3 className="font-serif text-3xl font-bold">ANUSHKAA KNITS WORLD</h3>
-                <p className="text-sm font-medium tracking-wide">Luxury Knitwear</p>
-                <p className="text-xs">Texvalley • Erode</p>
-                <p className="mt-4 text-[13px] italic">"Crafted with Quality. Designed for Everyday Elegance."</p>
-              </div>
-            </div>
-          </aside>
+          {/* Luxury Segmented Tab Switcher */}
+          <div className="bg-zinc-100 dark:bg-zinc-800/80 p-1.5 rounded-xl flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => setActiveTab("login")}
+              className={`flex-1 py-2.5 text-xs uppercase font-extrabold tracking-wider rounded-lg transition-all duration-300 ${
+                activeTab === "login"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white"
+              }`}
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("register")}
+              className={`flex-1 py-2.5 text-xs uppercase font-extrabold tracking-wider rounded-lg transition-all duration-300 ${
+                activeTab === "register"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white"
+              }`}
+            >
+              Register
+            </button>
+          </div>
 
-          {/* Right Card */}
-          <main className="col-span-12 lg:col-span-7 flex items-center justify-center p-6">
-            <div className="w-full max-w-[520px] bg-white rounded-[24px] shadow-lg p-12">
-              <div className="space-y-6">
-                <div className="text-center">
-                  <h2 className="font-serif text-3xl font-bold text-zinc-900">{activeTab === 'login' ? 'Welcome Back' : 'Create Your Account'}</h2>
-                  <p className="text-sm text-zinc-500 mt-2">{activeTab === 'login' ? 'Sign in to continue shopping.' : 'Join us and enjoy premium quality knitwear.'}</p>
+          {/* Tab Content Container */}
+          <AnimatePresence mode="wait">
+            {activeTab === "login" ? (
+              <motion.div
+                key="login-tab"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-6"
+              >
+                {/* Global Login Error Banner */}
+                {loginError && (
+                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 text-xs font-semibold flex items-start gap-2.5 animate-fadeIn">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
+
+                {/* Login Form */}
+                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                  {/* Email Field */}
+                  <div className="space-y-1.5">
+                    <label htmlFor="login-email" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="login-email"
+                        type="email"
+                        value={loginEmail}
+                        onChange={(e) => { setLoginEmail(e.target.value); setLoginError(""); }}
+                        placeholder="name@example.com"
+                        className="w-full px-4 py-3.5 text-xs sm:text-sm bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white rounded-xl border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-[#C8A24D] focus:ring-2 focus:ring-[#C8A24D]/20 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password Field */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="login-password" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                        Password
+                      </label>
+                      <Link
+                        href="/forgot-password"
+                        className="text-xs text-[#C8A24D] hover:underline font-bold"
+                      >
+                        Forgot Password?
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <input
+                        id="login-password"
+                        type={showLoginPwd ? "text" : "password"}
+                        value={loginPassword}
+                        onChange={(e) => { setLoginPassword(e.target.value); setLoginError(""); }}
+                        placeholder="••••••••"
+                        className="w-full pl-4 pr-11 py-3.5 text-xs sm:text-sm bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white rounded-xl border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-[#C8A24D] focus:ring-2 focus:ring-[#C8A24D]/20 transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPwd(prev => !prev)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                        aria-label="Toggle password visibility"
+                      >
+                        {showLoginPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Remember Me */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      id="remember-me"
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded text-[#C8A24D] focus:ring-[#C8A24D] accent-[#C8A24D] cursor-pointer"
+                    />
+                    <label htmlFor="remember-me" className="text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer select-none">
+                      Remember Me
+                    </label>
+                  </div>
+
+                  {/* GOLD LOGIN BUTTON */}
+                  <button
+                    type="submit"
+                    disabled={loginLoading}
+                    className="w-full bg-[#C8A24D] hover:bg-[#b8922d] text-white py-3.5 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-widest shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+                  >
+                    {loginLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Signing In…</span>
+                      </>
+                    ) : (
+                      <span>GOLD LOGIN</span>
+                    )}
+                  </button>
+                </form>
+
+                {/* Divider */}
+                <div className="relative flex items-center my-4">
+                  <div className="flex-1 border-t border-zinc-200 dark:border-zinc-800" />
+                  <span className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest whitespace-nowrap">
+                    or continue with
+                  </span>
+                  <div className="flex-1 border-t border-zinc-200 dark:border-zinc-800" />
                 </div>
 
-                {/* Tabs */}
-                <div className="flex gap-3 bg-zinc-50 p-2 rounded-xl">
-                  <button onClick={() => switchTab('login')} className={`${activeTab === 'login' ? 'bg-white shadow-md' : ''} flex-1 py-2 rounded-lg font-bold`}>Login</button>
-                  <button onClick={() => switchTab('register')} className={`${activeTab === 'register' ? 'bg-white shadow-md' : ''} flex-1 py-2 rounded-lg font-bold`}>Register</button>
-                </div>
+                {/* Google Sign-in */}
+                <button
+                  type="button"
+                  onClick={loginWithGoogle}
+                  className="w-full bg-white dark:bg-zinc-800/80 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 text-xs uppercase tracking-wider shadow-sm hover:shadow-md transition-all duration-300"
+                >
+                  <GoogleIcon />
+                  <span>Continue with Google</span>
+                </button>
 
-                {/* Content */}
-                <div style={{ opacity: isAnimating ? 0 : 1, transition: 'opacity 0.2s' }}>
-                  {activeTab === 'login' ? (
-                    <>
-                      <button onClick={loginWithGoogle} className="w-full rounded-xl py-3.5 bg-white border border-zinc-200 flex items-center justify-center gap-3 font-bold"> <GoogleIcon/> Continue with Google</button>
-                      <div className="my-4 text-center text-xs text-zinc-400">or sign in with email</div>
+                {/* Bottom Switcher */}
+                <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 pt-2">
+                  Don&apos;t have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("register")}
+                    className="text-[#C8A24D] font-bold hover:underline"
+                  >
+                    Create Account
+                  </button>
+                </p>
+              </motion.div>
+            ) : (
+              /* ── REGISTER TAB ───────────────────────────────────────────── */
+              <motion.div
+                key="register-tab"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-6"
+              >
+                {/* Success Banner */}
+                {regSuccess ? (
+                  <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-200 text-center space-y-3">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                    <h3 className="font-serif text-lg font-bold">Account Created Successfully!</h3>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                      Welcome to ANUSHKAA KNITS WORLD. You can now sign in with your email address.
+                    </p>
+                    <button
+                      onClick={() => { setRegSuccess(false); setActiveTab("login"); }}
+                      className="btn-gold text-xs px-6 py-2.5 rounded-xl font-bold uppercase tracking-wider shadow-md"
+                    >
+                      Proceed to Sign In
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Global Register Error Banner */}
+                    {regError && (
+                      <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 text-xs font-semibold flex items-start gap-2.5">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span>{regError}</span>
+                      </div>
+                    )}
 
-                      {loginError && <div className="bg-rose-50 border border-rose-100 text-rose-700 p-3 rounded-xl text-sm">{loginError}</div>}
-
-                      <form onSubmit={handleLoginSubmit} className="space-y-4">
-                        <div>
-                          <label className="text-xs font-semibold">Email Address</label>
-                          <input id="login-email" value={loginEmail} onChange={e => { setLoginEmail(e.target.value); setLoginError(''); }} type="email" className="w-full mt-2 p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="you@example.com" />
-                        </div>
-
-                        <div>
-                          <div className="flex justify-between items-center">
-                            <label className="text-xs font-semibold">Password</label>
-                            <Link href="/forgot-password" className="text-xs text-[#C8A24D] font-bold">Forgot Password?</Link>
-                          </div>
-                          <div className="relative mt-2">
-                            <input id="login-password" value={loginPassword} onChange={e => { setLoginPassword(e.target.value); setLoginError(''); }} type={showLoginPwd ? 'text' : 'password'} className="w-full p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="••••••••" />
-                            <button type="button" onClick={() => setShowLoginPwd(p => !p)} className="absolute right-3 top-3 text-zinc-500">{showLoginPwd ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <input id="remember-me" type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} className="w-4 h-4 accent-[#C8A24D]" />
-                          <label className="text-xs text-zinc-500">Remember Me</label>
-                        </div>
-
-                        <button type="submit" className="w-full bg-[#C8A24D] hover:bg-[#b8922d] text-white py-3.5 rounded-xl font-extrabold">{loginLoading ? <><Loader2 className="w-4 h-4 animate-spin"/> Signing In…</> : 'GOLD LOGIN'}</button>
-
-                      </form>
-
-                      <div className="mt-3">
-                        <button onClick={loginWithGoogle} className="w-full bg-white border border-zinc-200 py-3 rounded-xl font-bold">Continue with Google</button>
+                    <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                      {/* Full Name */}
+                      <div className="space-y-1.5">
+                        <label htmlFor="reg-name" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                          Full Name
+                        </label>
+                        <input
+                          id="reg-name"
+                          type="text"
+                          value={regName}
+                          onChange={(e) => { setRegName(e.target.value); setNameErr(""); }}
+                          placeholder="Your Full Name"
+                          className="w-full px-4 py-3 text-xs sm:text-sm bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white rounded-xl border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-[#C8A24D] focus:ring-2 focus:ring-[#C8A24D]/20 transition-all"
+                        />
+                        {nameErr && <p className="text-[10px] text-rose-500 font-semibold">{nameErr}</p>}
                       </div>
 
-                      <p className="text-center text-sm text-zinc-500 mt-3">New here? <button onClick={() => switchTab('register')} className="text-[#C8A24D] font-bold">Create Account</button></p>
-                    </>
-                  ) : (
-                    <>
-                      {/* Register Form - keep existing handlers */}
-                      <button onClick={loginWithGoogle} className="w-full rounded-xl py-3.5 bg-white border border-zinc-200 flex items-center justify-center gap-3 font-bold"> <GoogleIcon/> Continue with Google</button>
-                      <div className="my-4 text-center text-xs text-zinc-400">or register with email</div>
-
-                      {regError && <div className="bg-rose-50 border border-rose-100 text-rose-700 p-3 rounded-xl text-sm">{regError}</div>}
-
-                      <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                        <div>
-                          <label className="text-xs font-semibold">Full Name</label>
-                          <input id="reg-name" value={regName} onChange={e => { setRegName(e.target.value); setNameErr(''); }} type="text" className="w-full mt-2 p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="Your Full Name" />
-                          {nameErr && <p className="text-rose-500 text-xs mt-1">{nameErr}</p>}
+                      {/* Mobile Number */}
+                      <div className="space-y-1.5">
+                        <label htmlFor="reg-mobile" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                          Mobile Number
+                        </label>
+                        <div className="flex gap-2">
+                          <span className="inline-flex items-center px-3 text-xs font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-xl">
+                            +91
+                          </span>
+                          <input
+                            id="reg-mobile"
+                            type="tel"
+                            value={regMobile}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                              setRegMobile(val); setMobileErr("");
+                            }}
+                            placeholder="9XXXXXXXXX"
+                            className="flex-1 px-4 py-3 text-xs sm:text-sm bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white rounded-xl border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-[#C8A24D] focus:ring-2 focus:ring-[#C8A24D]/20 transition-all"
+                          />
                         </div>
+                        {mobileErr && <p className="text-[10px] text-rose-500 font-semibold">{mobileErr}</p>}
+                      </div>
 
-                        <div>
-                          <label className="text-xs font-semibold">Mobile Number</label>
-                          <div className="flex gap-2 mt-2">
-                            <span className="inline-flex items-center px-3 bg-zinc-50 border border-zinc-200 rounded-xl">+91</span>
-                            <input id="reg-mobile" value={regMobile} onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0,10); setRegMobile(v); setMobileErr(''); }} type="tel" className="flex-1 p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="9XXXXXXXXX" />
+                      {/* Email Address */}
+                      <div className="space-y-1.5">
+                        <label htmlFor="reg-email" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                          Email Address
+                        </label>
+                        <input
+                          id="reg-email"
+                          type="email"
+                          value={regEmail}
+                          onChange={(e) => { setRegEmail(e.target.value); setEmailErr(""); }}
+                          placeholder="name@example.com"
+                          className="w-full px-4 py-3 text-xs sm:text-sm bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white rounded-xl border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-[#C8A24D] focus:ring-2 focus:ring-[#C8A24D]/20 transition-all"
+                        />
+                        {emailErr && <p className="text-[10px] text-rose-500 font-semibold">{emailErr}</p>}
+                      </div>
+
+                      {/* Password */}
+                      <div className="space-y-1.5">
+                        <label htmlFor="reg-password" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                          Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="reg-password"
+                            type={showRegPwd ? "text" : "password"}
+                            value={regPassword}
+                            onChange={(e) => { setRegPassword(e.target.value); setPwdErr(""); }}
+                            placeholder="Min. 8 characters"
+                            className="w-full pl-4 pr-11 py-3 text-xs sm:text-sm bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white rounded-xl border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-[#C8A24D] focus:ring-2 focus:ring-[#C8A24D]/20 transition-all"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowRegPwd(prev => !prev)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                          >
+                            {showRegPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        {pwdErr && <p className="text-[10px] text-rose-500 font-semibold">{pwdErr}</p>}
+
+                        {/* Password Strength Meter */}
+                        {regPassword && (
+                          <div className="space-y-1.5 pt-1">
+                            <div className="flex items-center justify-between text-[10px] font-bold">
+                              <span className="text-zinc-500">Password Strength:</span>
+                              <span style={{ color: strength.color }}>{strength.label}</span>
+                            </div>
+                            <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full transition-all duration-300"
+                                style={{ width: `${strength.percent}%`, backgroundColor: strength.color }}
+                              />
+                            </div>
                           </div>
-                          {mobileErr && <p className="text-rose-500 text-xs mt-1">{mobileErr}</p>} 
+                        )}
+                      </div>
+
+                      {/* Confirm Password */}
+                      <div className="space-y-1.5">
+                        <label htmlFor="reg-confirm" className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                          Confirm Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="reg-confirm"
+                            type={showConfirm ? "text" : "password"}
+                            value={regConfirm}
+                            onChange={(e) => { setRegConfirm(e.target.value); setConfirmErr(""); }}
+                            placeholder="Re-enter your password"
+                            className="w-full pl-4 pr-11 py-3 text-xs sm:text-sm bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white rounded-xl border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-[#C8A24D] focus:ring-2 focus:ring-[#C8A24D]/20 transition-all"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirm(prev => !prev)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                          >
+                            {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
                         </div>
+                        {confirmErr && <p className="text-[10px] text-rose-500 font-semibold">{confirmErr}</p>}
+                      </div>
 
-                        <div>
-                          <label className="text-xs font-semibold">Email Address</label>
-                          <input id="reg-email" value={regEmail} onChange={e => { setRegEmail(e.target.value); setEmailErr(''); }} type="email" className="w-full mt-2 p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="you@example.com" />
-                          {emailErr && <p className="text-rose-500 text-xs mt-1">{emailErr}</p>}
-                        </div>
+                      {/* Create Account Button */}
+                      <button
+                        type="submit"
+                        disabled={regLoading}
+                        className="w-full bg-[#C8A24D] hover:bg-[#b8922d] text-white py-3.5 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-widest shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+                      >
+                        {regLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Creating Account…</span>
+                          </>
+                        ) : (
+                          <span>Create Account</span>
+                        )}
+                      </button>
+                    </form>
 
-                        <div>
-                          <label className="text-xs font-semibold">Password</label>
-                          <div className="relative mt-2">
-                            <input id="reg-password" value={regPassword} onChange={e => { setRegPassword(e.target.value); setPwdErr(''); }} type={showRegPwd ? 'text' : 'password'} className="w-full p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="Min. 8 characters" />
-                            <button type="button" onClick={() => setShowRegPwd(p => !p)} className="absolute right-3 top-3 text-zinc-500">{showRegPwd ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
-                          </div>
-                          {pwdErr && <p className="text-rose-500 text-xs mt-1">{pwdErr}</p>}
-                        </div>
+                    {/* Divider */}
+                    <div className="relative flex items-center my-4">
+                      <div className="flex-1 border-t border-zinc-200 dark:border-zinc-800" />
+                      <span className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest whitespace-nowrap">
+                        or register with
+                      </span>
+                      <div className="flex-1 border-t border-zinc-200 dark:border-zinc-800" />
+                    </div>
 
-                        <div>
-                          <label className="text-xs font-semibold">Confirm Password</label>
-                          <div className="relative mt-2">
-                            <input id="reg-confirm" value={regConfirm} onChange={e => { setRegConfirm(e.target.value); setConfirmErr(''); }} type={showConfirm ? 'text' : 'password'} className="w-full p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="Re-enter your password" />
-                            <button type="button" onClick={() => setShowConfirm(p => !p)} className="absolute right-3 top-3 text-zinc-500">{showConfirm ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
-                          </div>
-                          {confirmErr && <p className="text-rose-500 text-xs mt-1">{confirmErr}</p>}
-                        </div>
+                    {/* Google Registration */}
+                    <button
+                      type="button"
+                      onClick={loginWithGoogle}
+                      className="w-full bg-white dark:bg-zinc-800/80 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 text-xs uppercase tracking-wider shadow-sm hover:shadow-md transition-all duration-300"
+                    >
+                      <GoogleIcon />
+                      <span>Continue with Google</span>
+                    </button>
 
-                        <button type="submit" className="w-full bg-[#C8A24D] hover:bg-[#b8922d] text-white py-3.5 rounded-xl font-extrabold">{regLoading ? <><Loader2 className="w-4 h-4 animate-spin"/> Creating…</> : 'Create Account'}</button>
-                      </form>
+                    {/* Bottom Switcher */}
+                    <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 pt-2">
+                      Already have an account?{" "}
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("login")}
+                        className="text-[#C8A24D] font-bold hover:underline"
+                      >
+                        Sign In
+                      </button>
+                    </p>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                      <p className="text-center text-sm text-zinc-500 mt-3">Already have an account? <button onClick={() => switchTab('login')} className="text-[#C8A24D] font-bold">Sign In</button></p>
-                    </>
-                  )}
-                </div>
-
-                <div className="pt-4 border-t border-zinc-100 text-center text-xs text-zinc-400"> <ShieldCheck className="inline-block mr-2"/> 256-Bit SSL • Secured by Supabase Auth</div>
-
-              </div>
-            </div>
-          </main>
+          {/* Footer Security Badge */}
+          <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 text-center text-[11px] text-zinc-400 flex items-center justify-center gap-2 font-medium">
+            <ShieldCheck className="w-4 h-4 text-[#C8A24D]" />
+            <span>256-Bit SSL • Secured by Supabase Auth</span>
+          </div>
 
         </div>
+
       </div>
+
     </div>
   );
 }

@@ -277,10 +277,49 @@ export default function Home() {
                   <h4 className="font-bold text-zinc-900 dark:text-white">{rev.name}</h4>
                   <span className="text-[10px] text-zinc-400">{rev.role}</span>
                 </div>
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* NEWSLETTER SECTION */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-[#111111] text-white rounded-3xl p-8 sm:p-14 border border-zinc-800 text-center space-y-6 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#C8A24D]/10 rounded-full filter blur-3xl pointer-events-none" />
+          <div className="relative z-10 max-w-2xl mx-auto space-y-4">
+            <span className="text-xs font-bold text-[#C8A24D] uppercase tracking-widest">
+              Join The Privilege Club
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight">
+              Unlock 10% OFF Your First Order
+            </h2>
+            <p className="text-xs sm:text-sm text-zinc-400 font-light leading-relaxed">
+              Subscribe to receive exclusive preview access to new Export Surplus arrivals and seasonal luxury knitwear collections.
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                alert("Thank you for subscribing! Use code ANUSHKA10 at checkout.");
+              }}
+              className="flex flex-col sm:flex-row gap-3 pt-2 max-w-md mx-auto"
+            >
+              <input
+                type="email"
+                required
+                placeholder="Enter your email address"
+                className="flex-1 bg-zinc-900/90 border border-zinc-700 text-white placeholder-zinc-500 text-xs px-4 py-3.5 rounded-xl focus:outline-none focus:border-[#C8A24D]"
+              />
+              <button
+                type="submit"
+                className="bg-[#C8A24D] hover:bg-[#b8922d] text-white text-xs font-extrabold uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all shadow-md shrink-0"
+              >
+                Subscribe
+              </button>
+            </form>
+            <p className="text-[10px] text-zinc-500">No spam. Unsubscribe at any time.</p>
+          </div>
         </div>
       </section>
 
