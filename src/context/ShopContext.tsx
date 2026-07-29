@@ -189,6 +189,83 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadSupabaseData();
   }, []);
 
+  // Listen for Supabase auth state changes (including Google OAuth redirects & hash fragments)
+  useEffect(() => {
+    async function syncAuthUser(authUser: { id: string; email?: string; user_metadata?: Record<string, unknown> }) {
+      if (!authUser) {
+        setUser(null);
+        return;
+      }
+
+      const userEmail = authUser.email?.toLowerCase().trim() || "";
+
+      // Fetch profile from database
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, mobile_number, email, role, status")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
+
+      const fullName =
+        profile?.full_name ||
+        (authUser.user_metadata?.full_name as string) ||
+        (authUser.user_metadata?.name as string) ||
+        (userEmail ? userEmail.split("@")[0] : "Customer");
+
+      const userRole = profile?.role || "CUSTOMER";
+
+      // Create profile for new Google OAuth users if missing
+      if (!profile && userEmail) {
+        await supabase.from("profiles").upsert(
+          {
+            user_id: authUser.id,
+            full_name: fullName,
+            email: userEmail,
+            role: "CUSTOMER",
+            status: "ACTIVE",
+            last_login: new Date().toISOString()
+          },
+          { onConflict: "user_id" }
+        );
+      }
+
+      const isAppAdmin = userRole === "SUPER_ADMIN" || userRole === "Admin";
+      setUser({
+        name: fullName,
+        email: userEmail,
+        phone: profile?.mobile_number || "",
+        role: isAppAdmin ? "SUPER_ADMIN" : "Customer",
+        walletBalance: 200
+      });
+      setRole(isAppAdmin ? "Admin" : "Customer");
+
+      // Clean up access_token hash fragment from browser URL if present
+      if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    }
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        syncAuthUser(session.user);
+      }
+    });
+
+    // Subscribe to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        await syncAuthUser(session.user);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   // Load persistence from LocalStorage
   useEffect(() => {
     queueMicrotask(() => {

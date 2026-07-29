@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const next = searchParams.get("next") || null;
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=missing_code`);
+    return NextResponse.redirect(`${origin}/login`);
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
