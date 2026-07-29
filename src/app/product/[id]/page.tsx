@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { PRODUCTS } from "@/data/products";
 import { STORE_INFO } from "@/data/store-info";
 import { useShop } from "@/context/ShopContext";
@@ -16,11 +16,13 @@ import {
   Share2,
   Sparkles,
   MessageCircle,
-  Plus
+  Plus,
+  Zap
 } from "lucide-react";
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const productId = params?.id as string;
   const { addToCart, toggleWishlist, isInWishlist, showToast } = useShop();
 
@@ -257,33 +259,55 @@ export default function ProductDetailPage() {
 
           {/* Action CTAs */}
           <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => addToCart(product, selectedSize, selectedColor, quantity)}
-                className="flex-1 btn-gold py-4 px-8 rounded-xl font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl"
+                onClick={() => {
+                  if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+                    showToast("⚠️ Please select a size before adding to bag!");
+                    return;
+                  }
+                  addToCart(product, selectedSize || product.sizes[0] || "M", selectedColor, quantity);
+                }}
+                className="flex-1 btn-gold py-4 px-6 rounded-xl font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl"
               >
-                <ShoppingBag className="w-5 h-5" /> Add to Shopping Bag
+                <ShoppingBag className="w-4 h-4" /> Add to Shopping Bag
               </button>
 
               <button
-                onClick={() => toggleWishlist(product.id)}
-                className={`p-4 rounded-xl border transition-colors flex items-center justify-center ${
-                  isLiked
-                    ? "bg-rose-500 text-white border-rose-500"
-                    : "bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100"
-                }`}
-                title="Wishlist"
+                onClick={() => {
+                  if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+                    showToast("⚠️ Please select a size before proceeding to checkout!");
+                    return;
+                  }
+                  addToCart(product, selectedSize || product.sizes[0] || "M", selectedColor, quantity);
+                  router.push("/checkout");
+                }}
+                className="flex-1 bg-[#111111] hover:bg-zinc-800 text-white dark:bg-white dark:text-[#111111] py-4 px-6 rounded-xl font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl border border-zinc-900 transition-all hover:scale-[1.02]"
               >
-                <Heart className={`w-5 h-5 ${isLiked ? "fill-white" : ""}`} />
+                <Zap className="w-4 h-4 text-[#C8A24D]" /> Buy Now
               </button>
 
-              <button
-                onClick={handleShare}
-                className="p-4 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 transition-colors"
-                title="Share Product"
-              >
-                <Share2 className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => toggleWishlist(product.id)}
+                  className={`p-4 rounded-xl border transition-colors flex items-center justify-center ${
+                    isLiked
+                      ? "bg-rose-500 text-white border-rose-500"
+                      : "bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100"
+                  }`}
+                  title="Wishlist"
+                >
+                  <Heart className={`w-5 h-5 ${isLiked ? "fill-white" : ""}`} />
+                </button>
+
+                <button
+                  onClick={handleShare}
+                  className="p-4 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 transition-colors"
+                  title="Share Product"
+                >
+                  <Share2 className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+                </button>
+              </div>
             </div>
 
             <a

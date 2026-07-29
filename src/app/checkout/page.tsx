@@ -23,20 +23,119 @@ export default function CheckoutPage() {
   const { cart, cartSubtotal, cartGst, cartShipping, cartTotal, placeOrder, showToast } = useShop();
 
   const [step, setStep] = useState<number>(1);
+  const [addressMode, setAddressMode] = useState<"GPS" | "SEARCH" | "PINCODE">("PINCODE");
 
   // Address Form State
   const [address, setAddress] = useState({
     fullName: "Sivakumar P.",
-    phone: "9442707630",
-    addressLine: "55, Ground Floor, Global Market, Texvalley, NH47",
+    phone: "9566396667",
+    addressLine1: "55, Ground Floor, Global Market, Texvalley, NH47",
+    addressLine2: "Gangapuram, Chithode",
+    landmark: "Texvalley Main Gate",
+    pincode: "638102",
     city: "Erode",
+    district: "Erode",
     state: "Tamil Nadu",
-    pincode: "638102"
+    lat: 11.39088,
+    lng: 77.67499
   });
+
+  const [isLocating, setIsLocating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   // Payment Options State
   const [paymentMethod, setPaymentMethod] = useState<"UPI" | "CARD" | "NETBANKING" | "COD">("UPI");
   const [upiId, setUpiId] = useState("siva@upi");
+
+  // Live Postal API Pincode Lookup (India Post API)
+  const fetchAddressByPincode = async (pin: string) => {
+    if (pin.length === 6 && /^\d{6}$/.test(pin)) {
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+        const data = await res.json();
+        if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice?.length > 0) {
+          const po = data[0].PostOffice[0];
+          setAddress((prev) => ({
+            ...prev,
+            pincode: pin,
+            city: po.Block || po.Name || po.District,
+            district: po.District,
+            state: po.State
+          }));
+          showToast(`📍 Auto-detected location: ${po.District}, ${po.State}`);
+        }
+      } catch {
+        // Fallback
+      }
+    }
+  };
+
+  // 📍 Option 1: Browser GPS Detection
+  const handleFetchGPS = () => {
+    if (!navigator.geolocation) {
+      showToast("❌ Geolocation is not supported by your browser");
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await res.json();
+          if (data && data.address) {
+            const addr = data.address;
+            setAddress((prev) => ({
+              ...prev,
+              lat: latitude,
+              lng: longitude,
+              addressLine1: data.display_name.split(",").slice(0, 2).join(","),
+              city: addr.city || addr.town || addr.village || addr.county || "Erode",
+              district: addr.state_district || addr.county || "Erode",
+              state: addr.state || "Tamil Nadu",
+              pincode: addr.postcode || prev.pincode
+            }));
+            showToast("📍 Address & PIN code auto-filled from current GPS location!");
+          }
+        } catch {
+          setAddress((prev) => ({ ...prev, lat: latitude, lng: longitude }));
+          showToast("📍 Geolocation coordinates fetched successfully!");
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      () => {
+        setIsLocating(false);
+        showToast("❌ GPS Permission denied. Please enter PIN Code or Search location.");
+      }
+    );
+  };
+
+  // 🔍 Option 2: Search Address Autocomplete
+  const handleSelectSearchLocation = (selectedCity: string, selectedState: string, selectedPin: string) => {
+    setAddress((prev) => ({
+      ...prev,
+      city: selectedCity,
+      district: selectedCity,
+      state: selectedState,
+      pincode: selectedPin
+    }));
+    setSearchQuery(`${selectedCity}, ${selectedState} - ${selectedPin}`);
+    showToast(`📍 Location selected: ${selectedCity}, ${selectedState}`);
+  };
+
+  const handlePhoneChange = (val: string) => {
+    const cleaned = val.replace(/\D/g, "").slice(0, 10);
+    setAddress({ ...address, phone: cleaned });
+    if (cleaned.length > 0 && !/^[6-9]\d{9}$/.test(cleaned)) {
+      setPhoneError("Enter a valid 10-digit Indian mobile number starting with 6-9");
+    } else {
+      setPhoneError("");
+    }
+  };
 
   if (cart.length === 0) {
     return (
@@ -50,6 +149,11 @@ export default function CheckoutPage() {
   }
 
   const handlePlaceOrder = () => {
+    if (!/^[6-9]\d{9}$/.test(address.phone)) {
+      showToast("❌ Please enter a valid 10-digit mobile number!");
+      return;
+    }
+
     const newOrder = placeOrder({
       items: cart,
       subtotal: cartSubtotal,
@@ -57,7 +161,14 @@ export default function CheckoutPage() {
       gst: cartGst,
       shipping: cartShipping,
       total: cartTotal,
-      shippingAddress: address,
+      shippingAddress: {
+        fullName: address.fullName,
+        phone: address.phone,
+        addressLine: `${address.addressLine1}${address.addressLine2 ? ", " + address.addressLine2 : ""}${address.landmark ? " (Landmark: " + address.landmark + ")" : ""}`,
+        city: address.city,
+        state: address.state,
+        pincode: address.pincode
+      },
       paymentMethod: paymentMethod === "UPI" ? `Razorpay UPI (${upiId})` : paymentMethod,
       paymentStatus: paymentMethod === "COD" ? "Pending" : "Paid"
     });
@@ -95,85 +206,239 @@ export default function CheckoutPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Steps Form Area */}
         <div className="lg:col-span-2 space-y-6">
-          {/* STEP 1: SHIPPING ADDRESS */}
+          {/* STEP 1: SHIPPING ADDRESS WITH GOOGLE MAPS API & PINCODE AUTO-FILL */}
           {step === 1 && (
             <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-lg space-y-6">
-              <h2 className="font-serif font-bold text-2xl text-zinc-900 dark:text-white flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-[#C8A24D]" /> Delivery Address
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+                <h2 className="font-serif font-bold text-2xl text-zinc-900 dark:text-white flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-[#C8A24D]" /> Delivery Address
+                </h2>
+                
+                {/* 3 Input Mode Tabs */}
+                <div className="flex gap-1.5 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl text-[11px] font-bold uppercase">
+                  <button
+                    type="button"
+                    onClick={handleFetchGPS}
+                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                      isLocating ? "bg-[#C8A24D] text-white animate-pulse" : "hover:bg-white dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+                    }`}
+                  >
+                    📍 GPS Location
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAddressMode("SEARCH")}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      addressMode === "SEARCH" ? "bg-[#111111] text-white shadow-sm" : "hover:bg-white dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+                    }`}
+                  >
+                    🔍 Search Address
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAddressMode("PINCODE")}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      addressMode === "PINCODE" ? "bg-[#111111] text-white shadow-sm" : "hover:bg-white dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+                    }`}
+                  >
+                    📮 Manual PIN
+                  </button>
+                </div>
+              </div>
 
+              {/* ADDRESS SEARCH BAR IF MODE IS SEARCH */}
+              {addressMode === "SEARCH" && (
+                <div className="bg-zinc-50 dark:bg-zinc-800/80 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 space-y-2 text-xs">
+                  <label className="font-bold text-zinc-700 dark:text-zinc-300">
+                    Search Location or Landmark (Google Places Autocomplete)
+                  </label>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Type City, Area or PIN Code (e.g. Erode, Texvalley, Coimbatore)"
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#C8A24D]"
+                  />
+                  {searchQuery.length > 1 && (
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg divide-y divide-zinc-100 dark:divide-zinc-800 text-xs mt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectSearchLocation("Erode", "Tamil Nadu", "638102")}
+                        className="w-full text-left p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-between"
+                      >
+                        <div>
+                          <strong className="block text-zinc-900 dark:text-white">Texvalley, Gangapuram, Erode</strong>
+                          <span className="text-[10px] text-zinc-500">Tamil Nadu - 638102</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#C8A24D] uppercase">Select</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectSearchLocation("Coimbatore", "Tamil Nadu", "641001")}
+                        className="w-full text-left p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-between"
+                      >
+                        <div>
+                          <strong className="block text-zinc-900 dark:text-white">Coimbatore Central</strong>
+                          <span className="text-[10px] text-zinc-500">Tamil Nadu - 641001</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#C8A24D] uppercase">Select</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectSearchLocation("Chennai", "Tamil Nadu", "600001")}
+                        className="w-full text-left p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-between"
+                      >
+                        <div>
+                          <strong className="block text-zinc-900 dark:text-white">Chennai Metropolitan</strong>
+                          <span className="text-[10px] text-zinc-500">Tamil Nadu - 600001</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#C8A24D] uppercase">Select</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* MAIN FORM */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
+                  if (!/^[6-9]\d{9}$/.test(address.phone)) {
+                    setPhoneError("Enter a valid 10-digit Indian mobile number starting with 6-9");
+                    return;
+                  }
                   setStep(2);
                 }}
                 className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold"
               >
+                {/* Full Name */}
                 <div className="space-y-1 md:col-span-2">
-                  <label className="text-zinc-500">Full Name</label>
+                  <label className="text-zinc-500">Full Name *</label>
                   <input
                     type="text"
                     required
+                    placeholder="Sivakumar P."
                     value={address.fullName}
                     onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
                     className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#C8A24D]"
                   />
                 </div>
 
+                {/* Mobile Number with 10-digit Validation */}
                 <div className="space-y-1">
-                  <label className="text-zinc-500">Phone Number (For Courier Updates)</label>
-                  <input
-                    type="tel"
-                    required
-                    value={address.phone}
-                    onChange={(e) => setAddress({ ...address, phone: e.target.value })}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#C8A24D]"
-                  />
+                  <label className="text-zinc-500">Mobile Number (10-Digits) *</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-3 text-sm font-bold text-zinc-400">+91</span>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="9566396667"
+                      value={address.phone}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      className={`w-full bg-zinc-50 dark:bg-zinc-800 border rounded-xl pl-12 pr-4 py-3 text-sm font-medium focus:outline-none ${
+                        phoneError ? "border-rose-500 focus:border-rose-500" : "border-zinc-300 dark:border-zinc-700 focus:border-[#C8A24D]"
+                      }`}
+                    />
+                  </div>
+                  {phoneError && <p className="text-[10px] text-rose-500 font-bold">{phoneError}</p>}
                 </div>
 
+                {/* PIN Code with Auto-fetch Postal API */}
                 <div className="space-y-1">
-                  <label className="text-zinc-500">PIN Code</label>
+                  <label className="text-zinc-500">PIN Code * (Auto-Fetches City & State)</label>
                   <input
                     type="text"
                     required
                     maxLength={6}
+                    placeholder="638102"
                     value={address.pincode}
-                    onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      setAddress({ ...address, pincode: val });
+                      fetchAddressByPincode(val);
+                    }}
                     className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#C8A24D]"
                   />
                 </div>
 
+                {/* Address Line 1 */}
                 <div className="space-y-1 md:col-span-2">
-                  <label className="text-zinc-500">Flat / House No. / Street Address</label>
+                  <label className="text-zinc-500">Address Line 1 (Flat / Building / Street) *</label>
                   <input
                     type="text"
                     required
-                    value={address.addressLine}
-                    onChange={(e) => setAddress({ ...address, addressLine: e.target.value })}
+                    placeholder="55, Ground Floor, Global Market, Texvalley, NH47"
+                    value={address.addressLine1}
+                    onChange={(e) => setAddress({ ...address, addressLine1: e.target.value })}
                     className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#C8A24D]"
                   />
                 </div>
 
+                {/* Address Line 2 */}
                 <div className="space-y-1">
-                  <label className="text-zinc-500">City</label>
+                  <label className="text-zinc-500">Address Line 2 (Optional)</label>
                   <input
                     type="text"
-                    required
+                    placeholder="Gangapuram, Chithode"
+                    value={address.addressLine2}
+                    onChange={(e) => setAddress({ ...address, addressLine2: e.target.value })}
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#C8A24D]"
+                  />
+                </div>
+
+                {/* Landmark */}
+                <div className="space-y-1">
+                  <label className="text-zinc-500">Landmark (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="Near Texvalley Main Entrance"
+                    value={address.landmark}
+                    onChange={(e) => setAddress({ ...address, landmark: e.target.value })}
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#C8A24D]"
+                  />
+                </div>
+
+                {/* Auto-filled City / District */}
+                <div className="space-y-1">
+                  <label className="text-zinc-500">City / District (Auto-filled from PIN Code)</label>
+                  <input
+                    type="text"
+                    readOnly
                     value={address.city}
-                    onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#C8A24D]"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-not-allowed"
                   />
                 </div>
 
+                {/* Auto-filled State */}
                 <div className="space-y-1">
-                  <label className="text-zinc-500">State</label>
+                  <label className="text-zinc-500">State (Auto-filled from PIN Code)</label>
                   <input
                     type="text"
-                    required
+                    readOnly
                     value={address.state}
-                    onChange={(e) => setAddress({ ...address, state: e.target.value })}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#C8A24D]"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-not-allowed"
                   />
+                </div>
+
+                {/* GOOGLE MAPS VISUAL LOCATION DISPLAY CANVAS */}
+                <div className="md:col-span-2 space-y-2 pt-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#C8A24D] flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4" /> Selected Delivery Coordinates (Google Maps GPS)
+                  </label>
+                  <div className="relative aspect-21/9 w-full rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-900 shadow-inner flex items-center justify-center">
+                    <iframe
+                      title="Google Maps Location"
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      src={`https://maps.google.com/maps?q=${address.lat || 11.39088},${address.lng || 77.67499}&z=15&output=embed`}
+                    />
+                    <div className="absolute top-3 left-3 bg-zinc-900/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg border border-zinc-700 backdrop-blur-md shadow-lg flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                      <span>{address.city}, {address.state} ({address.pincode})</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="md:col-span-2 pt-4">
@@ -304,7 +569,7 @@ export default function CheckoutPage() {
                 <div>
                   <strong className="text-zinc-900 dark:text-white block font-bold">Shipping To:</strong>
                   <p>{address.fullName}</p>
-                  <p>{address.addressLine}, {address.city}, {address.state} – {address.pincode}</p>
+                  <p>{address.addressLine1}, {address.city}, {address.state} – {address.pincode}</p>
                   <p>Phone: {address.phone}</p>
                 </div>
 
