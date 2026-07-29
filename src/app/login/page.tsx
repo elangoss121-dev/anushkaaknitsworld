@@ -278,450 +278,152 @@ export default function AuthPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F8F7F5] flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-md">
-
-        {/* ── Brand ─────────────────────────────────────────────────────── */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex flex-col items-center gap-0.5 group">
-            <span className="font-serif text-3xl font-black tracking-widest text-[#111111] group-hover:text-[#C8A24D] transition-colors duration-300">
-              ANUSHKAA
-            </span>
-            <span className="text-[9px] font-bold tracking-[0.4em] uppercase text-[#C8A24D]">
-              KNITS WORLD • TEXVALLEY
-            </span>
+    <div className="min-h-screen bg-[#FBF9F6]">
+      <div className="sticky top-0 z-30 bg-white border-b border-zinc-100 h-[75px] flex items-center">
+        <div className="w-full px-6 max-w-7xl mx-auto flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="font-serif text-2xl font-black tracking-widest text-[#111111]">ANUSHKAA</div>
           </Link>
         </div>
+      </div>
 
-        {/* ── Card ──────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-3xl shadow-[0_4px_40px_rgba(0,0,0,0.08)] border border-zinc-100 overflow-hidden">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-12 min-h-[calc(100vh-75px)]">
 
-          {/* Tabs */}
-          <div className="flex border-b border-zinc-100">
-            {(["login", "register"] as Tab[]).map(tab => (
-              <button
-                key={tab}
-                id={`auth-tab-${tab}`}
-                type="button"
-                onClick={() => switchTab(tab)}
-                aria-selected={activeTab === tab}
-                className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition-colors relative ${
-                  activeTab === tab ? "text-[#111111]" : "text-zinc-400 hover:text-zinc-600"
-                }`}
-              >
-                {tab === "login" ? "Login" : "Register"}
-                {activeTab === tab && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C8A24D]" />
-                )}
-              </button>
-            ))}
-          </div>
+          {/* Left Image */}
+          <aside className="hidden lg:block lg:col-span-5 relative overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1520975919352-6a4fa9b5f9c8?auto=format&fit=crop&w=1600&q=80" alt="Luxury knitwear lifestyle" className="w-full h-full object-cover object-center transform transition-transform duration-700" />
+            <div className="absolute inset-0 bg-black/40" />
 
-          {/* Content with fade animation */}
-          <div
-            className="p-7 sm:p-9"
-            style={{ opacity: isAnimating ? 0 : 1, transition: "opacity 0.2s ease-in-out" }}
-          >
-            {/* ════════════════════ LOGIN TAB ════════════════════ */}
-            {activeTab === "login" && (
-              <div className="space-y-5">
-                <GoogleButton label="Continue with Google" />
-                <Divider text="or sign in with email" />
-
-                {/* Error / lockout banner */}
-                {loginError && (
-                  <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3.5 rounded-xl font-semibold flex items-start gap-2">
-                    {lockoutMs > 0
-                      ? <Clock className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                      : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                    }
-                    <div>
-                      <p>{loginError}</p>
-                      {lockoutMs > 0 && (
-                        <p className="font-black mt-1 text-rose-800 tabular-nums">
-                          {Math.floor(lockoutMs / 60000)}:{String(Math.floor((lockoutMs % 60000) / 1000)).padStart(2, "0")} remaining
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <form
-                  id="login-form"
-                  onSubmit={handleLoginSubmit}
-                  autoComplete="off"
-                  noValidate
-                  className="space-y-4"
-                >
-                  {/* Email */}
-                  <div className="space-y-1.5">
-                    <label htmlFor="login-email" className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400 pointer-events-none" />
-                      <input
-                        id="login-email"
-                        type="email"
-                        required
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="none"
-                        spellCheck={false}
-                        placeholder="you@example.com"
-                        value={loginEmail}
-                        onChange={e => { setLoginEmail(e.target.value); setLoginError(""); }}
-                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-[#C8A24D] focus:ring-2 focus:ring-[#C8A24D]/10 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Password */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <label htmlFor="login-password" className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-                        Password
-                      </label>
-                      <Link href="/forgot-password" className="text-[10px] font-bold text-[#C8A24D] hover:underline">
-                        Forgot Password?
-                      </Link>
-                    </div>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400 pointer-events-none" />
-                      <input
-                        id="login-password"
-                        type={showLoginPwd ? "text" : "password"}
-                        required
-                        autoComplete="new-password"
-                        autoCorrect="off"
-                        autoCapitalize="none"
-                        spellCheck={false}
-                        placeholder="••••••••"
-                        value={loginPassword}
-                        onChange={e => { setLoginPassword(e.target.value); setLoginError(""); }}
-                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-10 pr-12 py-3 text-sm focus:outline-none focus:border-[#C8A24D] focus:ring-2 focus:ring-[#C8A24D]/10 transition-all"
-                      />
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        aria-label={showLoginPwd ? "Hide password" : "Show password"}
-                        onClick={() => setShowLoginPwd(p => !p)}
-                        className="absolute right-3.5 top-3.5 text-zinc-400 hover:text-zinc-600 transition-colors"
-                      >
-                        {showLoginPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Remember me */}
-                  <label htmlFor="remember-me" className="flex items-center gap-2 cursor-pointer select-none w-fit">
-                    <input
-                      id="remember-me"
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={e => setRememberMe(e.target.checked)}
-                      className="w-3.5 h-3.5 rounded border-zinc-300 accent-[#C8A24D]"
-                    />
-                    <span className="text-[11px] text-zinc-500">Keep me signed in for 30 days</span>
-                  </label>
-
-                  {/* Submit */}
-                  <button
-                    id="login-submit"
-                    type="submit"
-                    disabled={loginLoading || lockoutMs > 0}
-                    className="w-full bg-[#C8A24D] hover:bg-[#b8922d] disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold py-3.5 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-[#C8A24D]/20 transition-all"
-                  >
-                    {loginLoading
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /><span>Signing In…</span></>
-                      : <><span>Login</span><ArrowRight className="w-4 h-4" /></>
-                    }
-                  </button>
-                </form>
-
-                <p className="text-center text-xs text-zinc-500 pt-1">
-                  New here?{" "}
-                  <button type="button" onClick={() => switchTab("register")} className="font-bold text-[#C8A24D] hover:underline">
-                    Create an Account
-                  </button>
-                </p>
+            <div className="absolute inset-0 flex items-center justify-center p-12">
+              <div className="text-white text-center space-y-4 max-w-xs">
+                <h3 className="font-serif text-3xl font-bold">ANUSHKAA KNITS WORLD</h3>
+                <p className="text-sm font-medium tracking-wide">Luxury Knitwear</p>
+                <p className="text-xs">Texvalley • Erode</p>
+                <p className="mt-4 text-[13px] italic">"Crafted with Quality. Designed for Everyday Elegance."</p>
               </div>
-            )}
-
-            {/* ════════════════════ REGISTER TAB ════════════════════ */}
-            {activeTab === "register" && (
-              <div className="space-y-5">
-                {/* Success state */}
-                {regSuccess ? (
-                  <div className="py-10 text-center space-y-4">
-                    <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto">
-                      <CheckCircle2 className="w-8 h-8 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h2 className="font-serif font-bold text-lg text-zinc-900">Account Created!</h2>
-                      <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
-                        Welcome to ANUSHKAA KNITS WORLD.<br />
-                        Please check your email to verify your account,<br />then sign in below.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => switchTab("login")}
-                      className="inline-flex items-center gap-2 bg-[#C8A24D] hover:bg-[#b8922d] text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition-all"
-                    >
-                      <span>Go to Sign In</span><ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <GoogleButton label="Continue with Google" />
-                    <Divider text="or register with email" />
-
-                    {/* Error banner */}
-                    {regError && (
-                      <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3.5 rounded-xl font-semibold flex items-start gap-2">
-                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                        <span>{regError}</span>
-                      </div>
-                    )}
-
-                    <form
-                      id="register-form"
-                      onSubmit={handleRegisterSubmit}
-                      autoComplete="off"
-                      noValidate
-                      className="space-y-4"
-                    >
-                      {/* Full Name */}
-                      <div className="space-y-1.5">
-                        <label htmlFor="reg-name" className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-                          Full Name *
-                        </label>
-                        <div className="relative">
-                          <User className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400 pointer-events-none" />
-                          <input
-                            id="reg-name"
-                            type="text"
-                            required
-                            autoComplete="off"
-                            autoCorrect="off"
-                            autoCapitalize="words"
-                            spellCheck={false}
-                            placeholder="Your Full Name"
-                            value={regName}
-                            onChange={e => { setRegName(e.target.value); setNameErr(""); }}
-                            className={`w-full bg-zinc-50 border rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 transition-all ${
-                              nameErr
-                                ? "border-rose-400 focus:border-rose-400 focus:ring-rose-100"
-                                : "border-zinc-200 focus:border-[#C8A24D] focus:ring-[#C8A24D]/10"
-                            }`}
-                          />
-                        </div>
-                        <FieldError msg={nameErr} />
-                      </div>
-
-                      {/* Mobile */}
-                      <div className="space-y-1.5">
-                        <label htmlFor="reg-mobile" className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-                          Mobile Number *
-                        </label>
-                        <div className={`flex border rounded-xl overflow-hidden bg-zinc-50 transition-all ${
-                          mobileErr
-                            ? "border-rose-400 focus-within:ring-2 focus-within:ring-rose-100"
-                            : "border-zinc-200 focus-within:border-[#C8A24D] focus-within:ring-2 focus-within:ring-[#C8A24D]/10"
-                        }`}>
-                          <span className="bg-zinc-100 border-r border-zinc-200 px-3 flex items-center text-xs font-bold text-zinc-500 shrink-0 select-none">
-                            +91
-                          </span>
-                          <input
-                            id="reg-mobile"
-                            type="tel"
-                            required
-                            autoComplete="off"
-                            placeholder="9XXXXXXXXX"
-                            maxLength={10}
-                            value={regMobile}
-                            onChange={e => {
-                              const v = e.target.value.replace(/\D/g, "").slice(0, 10);
-                              setRegMobile(v); setMobileErr("");
-                            }}
-                            className="flex-1 bg-transparent px-4 py-3 text-sm focus:outline-none"
-                          />
-                        </div>
-                        <FieldError msg={mobileErr} />
-                      </div>
-
-                      {/* Email */}
-                      <div className="space-y-1.5">
-                        <label htmlFor="reg-email" className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-                          Email Address *
-                        </label>
-                        <div className="relative">
-                          <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400 pointer-events-none" />
-                          <input
-                            id="reg-email"
-                            type="email"
-                            required
-                            autoComplete="off"
-                            autoCorrect="off"
-                            autoCapitalize="none"
-                            spellCheck={false}
-                            placeholder="you@example.com"
-                            value={regEmail}
-                            onChange={e => { setRegEmail(e.target.value); setEmailErr(""); }}
-                            className={`w-full bg-zinc-50 border rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 transition-all ${
-                              emailErr
-                                ? "border-rose-400 focus:border-rose-400 focus:ring-rose-100"
-                                : "border-zinc-200 focus:border-[#C8A24D] focus:ring-[#C8A24D]/10"
-                            }`}
-                          />
-                        </div>
-                        <FieldError msg={emailErr} />
-                      </div>
-
-                      {/* Create Password */}
-                      <div className="space-y-1.5">
-                        <label htmlFor="reg-password" className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-                          Create Password *
-                        </label>
-                        <div className="relative">
-                          <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400 pointer-events-none" />
-                          <input
-                            id="reg-password"
-                            type={showRegPwd ? "text" : "password"}
-                            required
-                            autoComplete="new-password"
-                            autoCorrect="off"
-                            autoCapitalize="none"
-                            spellCheck={false}
-                            placeholder="Min. 8 characters"
-                            value={regPassword}
-                            onChange={e => { setRegPassword(e.target.value); setPwdErr(""); }}
-                            className={`w-full bg-zinc-50 border rounded-xl pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 transition-all ${
-                              pwdErr
-                                ? "border-rose-400 focus:border-rose-400 focus:ring-rose-100"
-                                : "border-zinc-200 focus:border-[#C8A24D] focus:ring-[#C8A24D]/10"
-                            }`}
-                          />
-                          <button
-                            type="button"
-                            tabIndex={-1}
-                            aria-label={showRegPwd ? "Hide" : "Show"}
-                            onClick={() => setShowRegPwd(p => !p)}
-                            className="absolute right-3.5 top-3.5 text-zinc-400 hover:text-zinc-600 transition-colors"
-                          >
-                            {showRegPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-
-                        {/* Strength meter */}
-                        {regPassword.length > 0 && (
-                          <div className="space-y-2 pt-0.5">
-                            <div className="flex gap-1">
-                              {[1,2,3,4,5].map(i => (
-                                <div
-                                  key={i}
-                                  className="flex-1 h-1 rounded-full transition-all duration-300"
-                                  style={{ backgroundColor: i <= strength.score ? strength.color : "#F3F4F6" }}
-                                />
-                              ))}
-                            </div>
-                            <p className="text-[10px] font-bold" style={{ color: strength.color }}>
-                              {strength.label} Password
-                            </p>
-                            <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                              {pwdCriteria.map(({ ok, label }) => (
-                                <span key={label} className={`text-[10px] flex items-center gap-1 ${ok ? "text-emerald-600" : "text-zinc-400"}`}>
-                                  <span className="text-[8px]">{ok ? "✓" : "○"}</span>{label}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        <FieldError msg={pwdErr} />
-                      </div>
-
-                      {/* Confirm Password */}
-                      <div className="space-y-1.5">
-                        <label htmlFor="reg-confirm" className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-                          Confirm Password *
-                        </label>
-                        <div className="relative">
-                          <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400 pointer-events-none" />
-                          <input
-                            id="reg-confirm"
-                            type={showConfirm ? "text" : "password"}
-                            required
-                            autoComplete="new-password"
-                            autoCorrect="off"
-                            autoCapitalize="none"
-                            spellCheck={false}
-                            placeholder="Re-enter your password"
-                            value={regConfirm}
-                            onChange={e => { setRegConfirm(e.target.value); setConfirmErr(""); }}
-                            className={`w-full bg-zinc-50 border rounded-xl pl-10 pr-12 py-3 text-sm focus:outline-none focus:ring-2 transition-all ${
-                              (regConfirm && regPassword !== regConfirm) || confirmErr
-                                ? "border-rose-400 focus:border-rose-400 focus:ring-rose-100"
-                                : regConfirm && regPassword === regConfirm
-                                ? "border-emerald-400 focus:border-emerald-400 focus:ring-emerald-100"
-                                : "border-zinc-200 focus:border-[#C8A24D] focus:ring-[#C8A24D]/10"
-                            }`}
-                          />
-                          <button
-                            type="button"
-                            tabIndex={-1}
-                            aria-label={showConfirm ? "Hide" : "Show"}
-                            onClick={() => setShowConfirm(p => !p)}
-                            className="absolute right-3.5 top-3.5 text-zinc-400 hover:text-zinc-600 transition-colors"
-                          >
-                            {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                        {regConfirm.length > 0 && regPassword !== regConfirm && !confirmErr && (
-                          <p className="text-[10px] text-rose-500 font-semibold mt-1">Passwords do not match</p>
-                        )}
-                        <FieldError msg={confirmErr} />
-                      </div>
-
-                      {/* Submit */}
-                      <button
-                        id="register-submit"
-                        type="submit"
-                        disabled={regLoading}
-                        className="w-full bg-[#C8A24D] hover:bg-[#b8922d] disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold py-3.5 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-[#C8A24D]/20 transition-all"
-                      >
-                        {regLoading
-                          ? <><Loader2 className="w-4 h-4 animate-spin" /><span>Creating Account…</span></>
-                          : <><span>Create Account</span><CheckCircle2 className="w-4 h-4" /></>
-                        }
-                      </button>
-                    </form>
-
-                    <p className="text-center text-xs text-zinc-500 pt-1">
-                      Already have an account?{" "}
-                      <button type="button" onClick={() => switchTab("login")} className="font-bold text-[#C8A24D] hover:underline">
-                        Sign In
-                      </button>
-                    </p>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Security badge */}
-            <div className="mt-8 pt-5 border-t border-zinc-100 flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>256-Bit SSL • Secured by Supabase Auth</span>
             </div>
-          </div>
-        </div>
+          </aside>
 
-        {/* Back to store */}
-        <p className="text-center mt-6 text-[11px] text-zinc-400">
-          <Link href="/" className="hover:text-[#C8A24D] transition-colors font-medium">
-            ← Back to ANUSHKAA KNITS WORLD
-          </Link>
-        </p>
+          {/* Right Card */}
+          <main className="col-span-12 lg:col-span-7 flex items-center justify-center p-6">
+            <div className="w-full max-w-[520px] bg-white rounded-[24px] shadow-lg p-12">
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="font-serif text-3xl font-bold text-zinc-900">{activeTab === 'login' ? 'Welcome Back' : 'Create Your Account'}</h2>
+                  <p className="text-sm text-zinc-500 mt-2">{activeTab === 'login' ? 'Sign in to continue shopping.' : 'Join us and enjoy premium quality knitwear.'}</p>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex gap-3 bg-zinc-50 p-2 rounded-xl">
+                  <button onClick={() => switchTab('login')} className={`${activeTab === 'login' ? 'bg-white shadow-md' : ''} flex-1 py-2 rounded-lg font-bold`}>Login</button>
+                  <button onClick={() => switchTab('register')} className={`${activeTab === 'register' ? 'bg-white shadow-md' : ''} flex-1 py-2 rounded-lg font-bold`}>Register</button>
+                </div>
+
+                {/* Content */}
+                <div style={{ opacity: isAnimating ? 0 : 1, transition: 'opacity 0.2s' }}>
+                  {activeTab === 'login' ? (
+                    <>
+                      <button onClick={loginWithGoogle} className="w-full rounded-xl py-3.5 bg-white border border-zinc-200 flex items-center justify-center gap-3 font-bold"> <GoogleIcon/> Continue with Google</button>
+                      <div className="my-4 text-center text-xs text-zinc-400">or sign in with email</div>
+
+                      {loginError && <div className="bg-rose-50 border border-rose-100 text-rose-700 p-3 rounded-xl text-sm">{loginError}</div>}
+
+                      <form onSubmit={handleLoginSubmit} className="space-y-4">
+                        <div>
+                          <label className="text-xs font-semibold">Email Address</label>
+                          <input id="login-email" value={loginEmail} onChange={e => { setLoginEmail(e.target.value); setLoginError(''); }} type="email" className="w-full mt-2 p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="you@example.com" />
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center">
+                            <label className="text-xs font-semibold">Password</label>
+                            <Link href="/forgot-password" className="text-xs text-[#C8A24D] font-bold">Forgot Password?</Link>
+                          </div>
+                          <div className="relative mt-2">
+                            <input id="login-password" value={loginPassword} onChange={e => { setLoginPassword(e.target.value); setLoginError(''); }} type={showLoginPwd ? 'text' : 'password'} className="w-full p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="••••••••" />
+                            <button type="button" onClick={() => setShowLoginPwd(p => !p)} className="absolute right-3 top-3 text-zinc-500">{showLoginPwd ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input id="remember-me" type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} className="w-4 h-4 accent-[#C8A24D]" />
+                          <label className="text-xs text-zinc-500">Remember Me</label>
+                        </div>
+
+                        <button type="submit" className="w-full bg-[#C8A24D] hover:bg-[#b8922d] text-white py-3.5 rounded-xl font-extrabold">{loginLoading ? <><Loader2 className="w-4 h-4 animate-spin"/> Signing In…</> : 'GOLD LOGIN'}</button>
+
+                      </form>
+
+                      <div className="mt-3">
+                        <button onClick={loginWithGoogle} className="w-full bg-white border border-zinc-200 py-3 rounded-xl font-bold">Continue with Google</button>
+                      </div>
+
+                      <p className="text-center text-sm text-zinc-500 mt-3">New here? <button onClick={() => switchTab('register')} className="text-[#C8A24D] font-bold">Create Account</button></p>
+                    </>
+                  ) : (
+                    <>
+                      {/* Register Form - keep existing handlers */}
+                      <button onClick={loginWithGoogle} className="w-full rounded-xl py-3.5 bg-white border border-zinc-200 flex items-center justify-center gap-3 font-bold"> <GoogleIcon/> Continue with Google</button>
+                      <div className="my-4 text-center text-xs text-zinc-400">or register with email</div>
+
+                      {regError && <div className="bg-rose-50 border border-rose-100 text-rose-700 p-3 rounded-xl text-sm">{regError}</div>}
+
+                      <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                        <div>
+                          <label className="text-xs font-semibold">Full Name</label>
+                          <input id="reg-name" value={regName} onChange={e => { setRegName(e.target.value); setNameErr(''); }} type="text" className="w-full mt-2 p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="Your Full Name" />
+                          {nameErr && <p className="text-rose-500 text-xs mt-1">{nameErr}</p>}
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold">Mobile Number</label>
+                          <div className="flex gap-2 mt-2">
+                            <span className="inline-flex items-center px-3 bg-zinc-50 border border-zinc-200 rounded-xl">+91</span>
+                            <input id="reg-mobile" value={regMobile} onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0,10); setRegMobile(v); setMobileErr(''); }} type="tel" className="flex-1 p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="9XXXXXXXXX" />
+                          </div>
+                          {mobileErr && <p className="text-rose-500 text-xs mt-1">{mobileErr}</p>} 
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold">Email Address</label>
+                          <input id="reg-email" value={regEmail} onChange={e => { setRegEmail(e.target.value); setEmailErr(''); }} type="email" className="w-full mt-2 p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="you@example.com" />
+                          {emailErr && <p className="text-rose-500 text-xs mt-1">{emailErr}</p>}
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold">Password</label>
+                          <div className="relative mt-2">
+                            <input id="reg-password" value={regPassword} onChange={e => { setRegPassword(e.target.value); setPwdErr(''); }} type={showRegPwd ? 'text' : 'password'} className="w-full p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="Min. 8 characters" />
+                            <button type="button" onClick={() => setShowRegPwd(p => !p)} className="absolute right-3 top-3 text-zinc-500">{showRegPwd ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
+                          </div>
+                          {pwdErr && <p className="text-rose-500 text-xs mt-1">{pwdErr}</p>}
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold">Confirm Password</label>
+                          <div className="relative mt-2">
+                            <input id="reg-confirm" value={regConfirm} onChange={e => { setRegConfirm(e.target.value); setConfirmErr(''); }} type={showConfirm ? 'text' : 'password'} className="w-full p-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-[#C8A24D]/20 outline-none" placeholder="Re-enter your password" />
+                            <button type="button" onClick={() => setShowConfirm(p => !p)} className="absolute right-3 top-3 text-zinc-500">{showConfirm ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
+                          </div>
+                          {confirmErr && <p className="text-rose-500 text-xs mt-1">{confirmErr}</p>}
+                        </div>
+
+                        <button type="submit" className="w-full bg-[#C8A24D] hover:bg-[#b8922d] text-white py-3.5 rounded-xl font-extrabold">{regLoading ? <><Loader2 className="w-4 h-4 animate-spin"/> Creating…</> : 'Create Account'}</button>
+                      </form>
+
+                      <p className="text-center text-sm text-zinc-500 mt-3">Already have an account? <button onClick={() => switchTab('login')} className="text-[#C8A24D] font-bold">Sign In</button></p>
+                    </>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-zinc-100 text-center text-xs text-zinc-400"> <ShieldCheck className="inline-block mr-2"/> 256-Bit SSL • Secured by Supabase Auth</div>
+
+              </div>
+            </div>
+          </main>
+
+        </div>
       </div>
     </div>
   );

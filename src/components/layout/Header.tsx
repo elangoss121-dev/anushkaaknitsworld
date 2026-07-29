@@ -107,75 +107,13 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Slide-down Drawer */}
+        {/* Mobile Slide-down Drawer (simplified) */}
         {mobileMenuOpen && (
           <div className="lg:hidden bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 px-6 py-6 space-y-4">
-            <Link
-              href="/"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block font-bold text-sm uppercase text-zinc-900 dark:text-white"
-            >
-              Home
-            </Link>
-            <Link
-              href="/shop?category=t-shirts"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block font-bold text-sm uppercase text-zinc-900 dark:text-white"
-            >
-              T-Shirts
-            </Link>
-            <Link
-              href="/shop?category=shirts"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block font-bold text-sm uppercase text-zinc-900 dark:text-white"
-            >
-              Shirts
-            </Link>
-            <Link
-              href="/shop?category=tops"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block font-bold text-sm uppercase text-zinc-900 dark:text-white"
-            >
-              Tops
-            </Link>
-            <Link
-              href="/shop?category=hoodies"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block font-bold text-sm uppercase text-zinc-900 dark:text-white"
-            >
-              Hoodies
-            </Link>
-            <Link
-              href="/shop?category=kids-wear"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block font-bold text-sm uppercase text-zinc-900 dark:text-white"
-            >
-              Kids Wear
-            </Link>
-            <Link
-              href="/shop?category=export-surplus"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block font-bold text-sm uppercase text-[#C8A24D] flex justify-between items-center"
-            >
-              <span>Export Surplus</span>
-              <span className="bg-[#C8A24D] text-white text-[10px] px-2 py-0.5 rounded-full">
-                60% OFF
-              </span>
-            </Link>
-            <Link
-              href="/shop?category=innerwear"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block font-bold text-sm uppercase text-zinc-900 dark:text-white"
-            >
-              Innerwear
-            </Link>
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block font-bold text-sm uppercase text-amber-500"
-            >
-              Admin Dashboard
-            </Link>
+            <Link href="/" onClick={() => setMobileMenuOpen(false)} className="block font-bold text-sm uppercase text-zinc-900 dark:text-white">Home</Link>
+            <Link href="/shop" onClick={() => setMobileMenuOpen(false)} className="block font-bold text-sm uppercase text-zinc-900 dark:text-white">Products</Link>
+            <Link href="/cart" onClick={() => setMobileMenuOpen(false)} className="block font-bold text-sm uppercase text-zinc-900 dark:text-white">Cart</Link>
+            <Link href={user ? "/account" : "/login"} onClick={() => setMobileMenuOpen(false)} className="block font-bold text-sm uppercase text-zinc-900 dark:text-white">{user ? 'My Account' : 'Login'}</Link>
           </div>
         )}
       </nav>
