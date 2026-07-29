@@ -17,10 +17,10 @@ export const STORE_INFO = {
     mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3911.233486333917!2d77.67499!3d11.39088!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba96d03a1111111%3A0x1111111111111111!2sTexvalley%20Global%20Market%2C%20Erode!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
   },
   contact: {
-    phone: "9442707630",
-    phoneDisplay: "+91 9442707630",
-    whatsapp: "9566396667",
-    whatsappDisplay: "+91 9566396667",
+    phone: "9566396667",
+    phoneDisplay: "+91 9566396667",
+    whatsapp: "9442707630",
+    whatsappDisplay: "+91 9442707630",
     email: "support@anushkaaknitsworld.com",
     salesEmail: "orders@anushkaaknitsworld.com",
     workingHours: "Mon - Sun: 9:30 AM - 9:00 PM IST"

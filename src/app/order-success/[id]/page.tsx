@@ -83,7 +83,7 @@ export default function OrderSuccessPage() {
           </button>
 
           <a
-            href={`https://wa.me/919566396667?text=${encodeURIComponent(
+            href={`https://wa.me/91${STORE_INFO.contact.whatsapp}?text=${encodeURIComponent(
               `Hi ANUSHKAA KNITS WORLD! I placed Order ${order.id}. Please send me tracking updates.`
             )}`}
             target="_blank"

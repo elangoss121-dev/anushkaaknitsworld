@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import { PRODUCTS } from "@/data/products";
+import { STORE_INFO } from "@/data/store-info";
 import { useShop } from "@/context/ShopContext";
 import { ProductCard } from "@/components/common/ProductCard";
 import {
@@ -286,7 +287,7 @@ export default function ProductDetailPage() {
             </div>
 
             <a
-              href={`https://wa.me/919566396667?text=${encodeURIComponent(
+              href={`https://wa.me/91${STORE_INFO.contact.whatsapp}?text=${encodeURIComponent(
                 `Hello ANUSHKAA KNITS WORLD, I have a question about product: ${product.name} (SKU: ${product.sku})`
               )}`}
               target="_blank"
