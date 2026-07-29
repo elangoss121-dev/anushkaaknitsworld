@@ -98,18 +98,18 @@ export default function CheckoutPage() {
               state: addr.state || "Tamil Nadu",
               pincode: addr.postcode || prev.pincode
             }));
-            showToast("📍 Address & PIN code auto-filled from current GPS location!");
+            showToast("📍 Current location detected successfully.");
           }
         } catch {
           setAddress((prev) => ({ ...prev, lat: latitude, lng: longitude }));
-          showToast("📍 Geolocation coordinates fetched successfully!");
+          showToast("📍 Current location detected successfully.");
         } finally {
           setIsLocating(false);
         }
       },
       () => {
         setIsLocating(false);
-        showToast("❌ GPS Permission denied. Please enter PIN Code or Search location.");
+        showToast("Location permission denied. Please enter your address manually.");
       }
     );
   };
@@ -206,24 +206,32 @@ export default function CheckoutPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Steps Form Area */}
         <div className="lg:col-span-2 space-y-6">
-          {/* STEP 1: SHIPPING ADDRESS WITH GOOGLE MAPS API & PINCODE AUTO-FILL */}
+          {/* STEP 1: SHIPPING ADDRESS WITH 3 OPTIONS */}
           {step === 1 && (
-            <div className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-lg space-y-6">
+            <div className="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-lg space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
-                <h2 className="font-serif font-bold text-2xl text-zinc-900 dark:text-white flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-[#C8A24D]" /> Delivery Address
-                </h2>
-                
-                {/* 3 Input Mode Tabs */}
+                <div>
+                  <h2 className="font-serif font-bold text-2xl text-zinc-900 dark:text-white flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-[#C8A24D]" /> Delivery Address
+                  </h2>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    Fast & simple checkout — complete your address in under 30 seconds.
+                  </p>
+                </div>
+
+                {/* 3 Mode Option Tabs */}
                 <div className="flex gap-1.5 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl text-[11px] font-bold uppercase">
                   <button
                     type="button"
-                    onClick={handleFetchGPS}
+                    onClick={() => {
+                      setAddressMode("GPS");
+                      handleFetchGPS();
+                    }}
                     className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
-                      isLocating ? "bg-[#C8A24D] text-white animate-pulse" : "hover:bg-white dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+                      addressMode === "GPS" ? "bg-[#C8A24D] text-white shadow-sm" : "hover:bg-white dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
                     }`}
                   >
-                    📍 GPS Location
+                    📍 Use Current Location
                   </button>
                   <button
                     type="button"
@@ -241,12 +249,23 @@ export default function CheckoutPage() {
                       addressMode === "PINCODE" ? "bg-[#111111] text-white shadow-sm" : "hover:bg-white dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
                     }`}
                   >
-                    📮 Manual PIN
+                    📮 Enter PIN Code
                   </button>
                 </div>
               </div>
 
-              {/* ADDRESS SEARCH BAR IF MODE IS SEARCH */}
+              {/* PROMINENT TOP LOCATION BUTTON */}
+              <button
+                type="button"
+                onClick={handleFetchGPS}
+                disabled={isLocating}
+                className="w-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-[#C8A24D] dark:hover:bg-[#C8A24D] dark:hover:text-white font-extrabold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 text-xs uppercase tracking-wider transition-all shadow-md"
+              >
+                <MapPin className={`w-4 h-4 text-[#C8A24D] ${isLocating ? "animate-bounce" : ""}`} />
+                <span>{isLocating ? "Detecting GPS Location..." : "📍 Use Current Location (Auto-Fill Address)"}</span>
+              </button>
+
+              {/* OPTION 2: ADDRESS SEARCH BAR */}
               {addressMode === "SEARCH" && (
                 <div className="bg-zinc-50 dark:bg-zinc-800/80 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 space-y-2 text-xs">
                   <label className="font-bold text-zinc-700 dark:text-zinc-300">
@@ -374,7 +393,7 @@ export default function CheckoutPage() {
                   />
                 </div>
 
-                {/* Address Line 2 */}
+                {/* Address Line 2 / Landmark */}
                 <div className="space-y-1">
                   <label className="text-zinc-500">Address Line 2 (Optional)</label>
                   <input
@@ -386,7 +405,6 @@ export default function CheckoutPage() {
                   />
                 </div>
 
-                {/* Landmark */}
                 <div className="space-y-1">
                   <label className="text-zinc-500">Landmark (Optional)</label>
                   <input
@@ -400,7 +418,7 @@ export default function CheckoutPage() {
 
                 {/* Auto-filled City / District */}
                 <div className="space-y-1">
-                  <label className="text-zinc-500">City / District (Auto-filled from PIN Code)</label>
+                  <label className="text-zinc-500">City / District (Auto-filled)</label>
                   <input
                     type="text"
                     readOnly
@@ -411,34 +429,13 @@ export default function CheckoutPage() {
 
                 {/* Auto-filled State */}
                 <div className="space-y-1">
-                  <label className="text-zinc-500">State (Auto-filled from PIN Code)</label>
+                  <label className="text-zinc-500">State (Auto-filled)</label>
                   <input
                     type="text"
                     readOnly
                     value={address.state}
                     className="w-full bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm font-bold text-zinc-700 dark:text-zinc-300 cursor-not-allowed"
                   />
-                </div>
-
-                {/* GOOGLE MAPS VISUAL LOCATION DISPLAY CANVAS */}
-                <div className="md:col-span-2 space-y-2 pt-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#C8A24D] flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4" /> Selected Delivery Coordinates (Google Maps GPS)
-                  </label>
-                  <div className="relative aspect-21/9 w-full rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-900 shadow-inner flex items-center justify-center">
-                    <iframe
-                      title="Google Maps Location"
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      src={`https://maps.google.com/maps?q=${address.lat || 11.39088},${address.lng || 77.67499}&z=15&output=embed`}
-                    />
-                    <div className="absolute top-3 left-3 bg-zinc-900/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg border border-zinc-700 backdrop-blur-md shadow-lg flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                      <span>{address.city}, {address.state} ({address.pincode})</span>
-                    </div>
-                  </div>
                 </div>
 
                 <div className="md:col-span-2 pt-4">
