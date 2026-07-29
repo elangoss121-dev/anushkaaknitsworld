@@ -4,47 +4,51 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useShop } from "@/context/ShopContext";
-import { Lock, Mail, ArrowRight, ShieldCheck, Check } from "lucide-react";
+import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loginWithGoogle, loginWithEmail, showToast } = useShop();
+  const { user, role, loginWithGoogle, loginWithEmail, showToast } = useShop();
 
-  const [step, setStep] = useState<"email" | "password">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
+  // Redirect if already logged in based on role
   useEffect(() => {
     if (user) {
-      router.push("/account");
+      if (role === "Admin" || user.role === "SUPER_ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/account");
+      }
     }
-  }, [user, router]);
-
-  const handleContinueEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes("@")) {
-      showToast("❌ Please enter a valid email address!");
-      return;
-    }
-    setStep("password");
-  };
+  }, [user, role, router]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password) {
-      showToast("❌ Please enter your password!");
+    setErrorMessage("");
+
+    if (!email || !password) {
+      setErrorMessage("Invalid email or password.");
       return;
     }
+
     setLoading(true);
     try {
       const res = await loginWithEmail(email, password);
       if (res.success) {
-        router.push("/account");
+        if (res.role === "SUPER_ADMIN" || res.redirectUrl === "/admin") {
+          router.push("/admin");
+        } else {
+          router.push("/account");
+        }
+      } else {
+        setErrorMessage(res.error || "Invalid email or password.");
       }
     } catch {
-      showToast("❌ Authentication failed. Please try again.");
+      setErrorMessage("Invalid email or password.");
     } finally {
       setLoading(false);
     }
@@ -64,14 +68,14 @@ export default function LoginPage() {
             </span>
           </Link>
           <h1 className="text-xl font-serif font-bold text-zinc-900 pt-2">
-            Welcome Back to Luxury
+            Sign In to Account
           </h1>
           <p className="text-xs text-zinc-500">
-            Sign in to track orders, manage addresses, and access your account.
+            Unified access for Customer Account and Store Management.
           </p>
         </div>
 
-        {/* 1. CONTINUE WITH GOOGLE (Official OAuth) */}
+        {/* 1. CONTINUE WITH GOOGLE */}
         <div className="space-y-4">
           <button
             type="button"
@@ -102,113 +106,91 @@ export default function LoginPage() {
           <div className="relative flex items-center justify-center">
             <div className="border-t border-zinc-200 w-full" />
             <span className="bg-white px-3 text-[10px] font-bold text-zinc-400 uppercase tracking-widest absolute">
-              or continue with email
+              or sign in with email
             </span>
           </div>
         </div>
 
-        {/* 2. EMAIL LOGIN FLOW */}
-        {step === "email" ? (
-          <form onSubmit={handleContinueEmail} className="space-y-4 text-xs font-semibold">
-            <div className="space-y-1">
-              <label className="text-zinc-500">Email Address *</label>
-              <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400" />
-                <input
-                  type="email"
-                  required
-                  placeholder="customer@anushkaaknitsworld.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-zinc-50 border border-zinc-300 rounded-xl pl-10 pr-4 py-3 text-xs focus:outline-none focus:border-[#C8A24D]"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full btn-gold py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-2"
-            >
-              <span>Continue</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs font-semibold">
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <label className="text-zinc-500">Email Address</label>
-                <button
-                  type="button"
-                  onClick={() => setStep("email")}
-                  className="text-[10px] text-[#C8A24D] font-bold hover:underline"
-                >
-                  Change Email
-                </button>
-              </div>
-              <input
-                type="email"
-                disabled
-                value={email}
-                className="w-full bg-zinc-100 border border-zinc-200 rounded-xl px-4 py-3 text-xs font-bold text-zinc-700 cursor-not-allowed"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <label className="text-zinc-500">Password *</label>
-                <Link
-                  href="/forgot-password"
-                  className="text-[10px] text-[#C8A24D] font-bold hover:underline"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400" />
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-50 border border-zinc-300 rounded-xl pl-10 pr-4 py-3 text-xs focus:outline-none focus:border-[#C8A24D]"
-                />
-              </div>
-            </div>
-
-            {/* Remember Me Checkbox */}
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="checkbox"
-                id="remember"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-zinc-300 text-[#C8A24D] focus:ring-[#C8A24D]"
-              />
-              <label htmlFor="remember" className="text-xs text-zinc-600 cursor-pointer select-none">
-                Remember Me on this device
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-gold py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <span>Authenticating...</span>
-              ) : (
-                <>
-                  <span>Sign In</span>
-                  <Check className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
+        {/* ERROR MESSAGE BANNER */}
+        {errorMessage && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3.5 rounded-2xl font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
         )}
 
-        {/* Link to Register Page */}
+        {/* 2. UNIFIED LOGIN FORM WITH AUTOFILL DISABLED */}
+        <form
+          onSubmit={handleLoginSubmit}
+          autoComplete="off"
+          className="space-y-4 text-xs font-semibold"
+        >
+          {/* Email Address */}
+          <div className="space-y-1">
+            <label className="text-zinc-500">Email Address *</label>
+            <div className="relative">
+              <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400" />
+              <input
+                type="email"
+                required
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="email@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-zinc-50 border border-zinc-300 rounded-xl pl-10 pr-4 py-3 text-xs focus:outline-none focus:border-[#C8A24D]"
+              />
+            </div>
+          </div>
+
+          {/* Password */}
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <label className="text-zinc-500">Password *</label>
+              <Link
+                href="/forgot-password"
+                className="text-[10px] text-[#C8A24D] font-bold hover:underline"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+            <div className="relative">
+              <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400" />
+              <input
+                type="password"
+                required
+                autoComplete="new-password"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-zinc-50 border border-zinc-300 rounded-xl pl-10 pr-4 py-3 text-xs focus:outline-none focus:border-[#C8A24D]"
+              />
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full btn-gold py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <span>Authenticating...</span>
+            ) : (
+              <>
+                <span>Login</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Create Account Link */}
         <div className="text-center pt-2 border-t border-zinc-100 text-xs">
           <p className="text-zinc-500">
             Don&apos;t have an account yet?{" "}
@@ -221,7 +203,7 @@ export default function LoginPage() {
         {/* Security Footer */}
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>256-Bit SSL Encrypted & Live Supabase Connected</span>
+          <span>256-Bit SSL Encrypted & Live Role Security Verified</span>
         </div>
       </div>
     </div>

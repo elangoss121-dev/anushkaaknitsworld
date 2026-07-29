@@ -38,7 +38,7 @@ interface UserProfile {
   name: string;
   email: string;
   phone: string;
-  role: "Customer" | "Manager" | "Admin";
+  role: "Customer" | "Manager" | "Admin" | "SUPER_ADMIN";
   walletBalance: number;
 }
 
@@ -80,7 +80,7 @@ interface ShopContextType {
   placeOrder: (details: Omit<OrderItem, "id" | "date" | "status" | "trackingNumber">) => OrderItem;
   loginUser: (email: string, name?: string) => void;
   loginWithGoogle: () => Promise<void>;
-  loginWithEmail: (email: string, password?: string) => Promise<{ success: boolean; message: string }>;
+  loginWithEmail: (email: string, password?: string) => Promise<{ success: boolean; message?: string; role?: string; redirectUrl?: string; error?: string }>;
   logoutUser: () => void;
 
   // Toast System
@@ -406,7 +406,26 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithEmail = async (email: string, password = "Password123!") => {
+  const loginWithEmail = async (email: string, password = "") => {
+    // 1. Super Admin Role Check (ANUSHKAA ADMIN)
+    if (email.toLowerCase().trim() === "anushkaa@gmail.com") {
+      if (password === "anushkaa123") {
+        setUser({
+          name: "ANUSHKAA ADMIN",
+          email: "anushkaa@gmail.com",
+          phone: "+91 9566396667",
+          role: "SUPER_ADMIN",
+          walletBalance: 0
+        });
+        setRole("Admin");
+        showToast("👑 Welcome, ANUSHKAA ADMIN (SUPER_ADMIN)!");
+        return { success: true, role: "SUPER_ADMIN", redirectUrl: "/admin" };
+      } else {
+        return { success: false, error: "Invalid email or password." };
+      }
+    }
+
+    // 2. Customer Credentials / Supabase Auth Check
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -414,19 +433,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        // Attempt sign up if user does not exist
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: email.split("@")[0] }
-          }
-        });
-        if (signUpErr) {
-          loginUser(email, email.split("@")[0]);
-          return { success: true, message: `Welcome ${email}` };
-        }
-        if (signUpData.user) {
+        if (password && password.length >= 6) {
           setUser({
             name: email.split("@")[0],
             email,
@@ -434,9 +441,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: "Customer",
             walletBalance: 200
           });
-          showToast(`Account registered & logged in as ${email}!`);
-          return { success: true, message: "Account created successfully" };
+          setRole("Customer");
+          showToast(`Welcome back, ${email}!`);
+          return { success: true, role: "CUSTOMER", redirectUrl: "/account" };
         }
+        return { success: false, error: "Invalid email or password." };
       }
 
       if (data.user) {
@@ -447,13 +456,13 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: "Customer",
           walletBalance: 200
         });
+        setRole("Customer");
         showToast(`Welcome back, ${email}!`);
-        return { success: true, message: "Logged in successfully" };
+        return { success: true, role: "CUSTOMER", redirectUrl: "/account" };
       }
-      return { success: true, message: "Logged in" };
+      return { success: false, error: "Invalid email or password." };
     } catch {
-      loginUser(email, email.split("@")[0]);
-      return { success: true, message: "Logged in locally" };
+      return { success: false, error: "Invalid email or password." };
     }
   };
 

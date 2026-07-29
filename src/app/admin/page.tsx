@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboardPage() {
-  const { showToast } = useShop();
+  const { role, user, showToast } = useShop();
 
   const [activeTab, setActiveTab] = useState<
     "analytics" | "products" | "orders" | "categories" | "reviews" | "seo"
@@ -74,6 +74,31 @@ export default function AdminDashboardPage() {
       status: string;
     }[]
   >([]);
+
+  // SUPER_ADMIN Route Security Gate
+  const isSuperAdmin = role === "Admin" || user?.role === "SUPER_ADMIN";
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 flex items-center justify-center text-2xl font-bold">
+          403
+        </div>
+        <h1 className="text-2xl font-serif font-bold text-zinc-900 dark:text-white">
+          403 — Access Denied
+        </h1>
+        <p className="text-xs text-zinc-500 max-w-md">
+          Only users with the <strong>SUPER_ADMIN</strong> role can access the ANUSHKAA KNITS WORLD Store Management Panel.
+        </p>
+        <a
+          href="/login"
+          className="btn-gold px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg"
+        >
+          Sign In as SUPER_ADMIN
+        </a>
+      </div>
+    );
+  }
 
   // Handle Drag & Drop Local Image File Upload
   const handleFileUpload = (files: FileList | null) => {
