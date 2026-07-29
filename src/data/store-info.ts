@@ -31,22 +31,8 @@ export const STORE_INFO = {
     twitter: "https://twitter.com/anushkaaknits",
     youtube: "https://youtube.com/@anushkaaknitsworld"
   },
-  announcements: [
-    "✨ FESTIVE SALE: Extra 15% OFF on Export Surplus Knitwear | Code: EXPORT15",
-    "🚚 FREE Worldwide & Pan-India Express Delivery on Orders Above ₹999",
-    "🏬 Visit our Flagship Texvalley Store in Erode for Exclusive In-Store Collections"
-  ],
-  currencies: [
-    { code: "INR", symbol: "₹", rate: 1, label: "INR (₹)" },
-    { code: "USD", symbol: "$", rate: 0.012, label: "USD ($)" },
-    { code: "EUR", symbol: "€", rate: 0.011, label: "EUR (€)" },
-    { code: "GBP", symbol: "£", rate: 0.0094, label: "GBP (£)" }
-  ],
-  coupons: [
-    { code: "WELCOME10", discountPercent: 10, minAmount: 499, description: "10% OFF on your first purchase" },
-    { code: "EXPORT20", discountPercent: 20, minAmount: 1999, description: "Flat 20% OFF on Export Surplus collection" },
-    { code: "TEXVALLEY15", discountPercent: 15, minAmount: 999, description: "15% Texvalley Store Celebration Special" }
-  ],
+  announcements: [],
+  currency: { code: "INR", symbol: "₹", label: "INR (₹)" },
   categories: [
     {
       id: "t-shirts",

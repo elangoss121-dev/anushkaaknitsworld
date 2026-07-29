@@ -202,11 +202,25 @@ export default function Home() {
         </div>
 
         {/* Product Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {filteredProducts.length === 0 ? (
+          <div className="py-16 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-8 space-y-4">
+            <h3 className="text-xl font-serif font-bold text-zinc-900 dark:text-white">
+              No products have been added yet
+            </h3>
+            <p className="text-xs text-zinc-500 max-w-md mx-auto">
+              Our Texvalley catalog is currently starting in a clean state. Add your first product in the Admin Panel to populate the storefront!
+            </p>
+            <Link href="/admin" className="inline-block btn-gold px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md">
+              Add First Product in Admin
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* WHY CHOOSE ANUSHKAA KNITS WORLD */}

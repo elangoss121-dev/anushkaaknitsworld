@@ -61,39 +61,19 @@ export default function AdminDashboardPage() {
     isExportSurplus: false
   });
 
-  // Orders Admin State
-  const [adminOrders, setAdminOrders] = useState([
+  // Orders Admin State (Clean initial 0 orders)
+  const [adminOrders, setAdminOrders] = useState<
     {
-      id: "AKW-98214",
-      customer: "Sivakumar P.",
-      phone: "9442707630",
-      date: "2026-07-29",
-      itemsCount: 2,
-      total: 2598,
-      payment: "Razorpay UPI",
-      status: "Confirmed"
-    },
-    {
-      id: "AKW-98215",
-      customer: "Deepika S.",
-      phone: "9566396667",
-      date: "2026-07-28",
-      itemsCount: 1,
-      total: 1499,
-      payment: "Cash on Delivery",
-      status: "Shipped"
-    },
-    {
-      id: "AKW-98216",
-      customer: "Karthik R.",
-      phone: "9876543210",
-      date: "2026-07-27",
-      itemsCount: 3,
-      total: 3997,
-      payment: "Credit Card",
-      status: "Delivered"
-    }
-  ]);
+      id: string;
+      customer: string;
+      phone: string;
+      date: string;
+      itemsCount: number;
+      total: number;
+      payment: string;
+      status: string;
+    }[]
+  >([]);
 
   // Handle Drag & Drop Local Image File Upload
   const handleFileUpload = (files: FileList | null) => {
@@ -294,42 +274,44 @@ export default function AdminDashboardPage() {
                 <span>Today&apos;s Revenue</span>
                 <DollarSign className="w-4 h-4 text-[#C8A24D]" />
               </div>
-              <p className="text-3xl font-serif font-bold text-zinc-900">₹45,290</p>
-              <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5" /> +18.4% vs yesterday
+              <p className="text-3xl font-serif font-bold text-zinc-900">
+                ₹{adminOrders.reduce((sum, o) => sum + o.total, 0).toLocaleString()}
+              </p>
+              <span className="text-xs text-zinc-400 font-bold">
+                {adminOrders.length} orders processed
               </span>
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-2">
               <div className="flex justify-between items-center text-xs font-bold text-zinc-400 uppercase">
-                <span>Weekly Revenue</span>
+                <span>Total Catalog Products</span>
                 <BarChart3 className="w-4 h-4 text-[#C8A24D]" />
               </div>
-              <p className="text-3xl font-serif font-bold text-zinc-900">₹3,12,450</p>
-              <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5" /> +24.1% vs last week
+              <p className="text-3xl font-serif font-bold text-zinc-900">{productList.length}</p>
+              <span className="text-xs text-zinc-400 font-bold">
+                {productList.length === 0 ? "Add your first product to get started" : "Active in store catalog"}
               </span>
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-2">
               <div className="flex justify-between items-center text-xs font-bold text-zinc-400 uppercase">
-                <span>Monthly Revenue</span>
+                <span>Total Orders</span>
                 <TrendingUp className="w-4 h-4 text-[#C8A24D]" />
               </div>
-              <p className="text-3xl font-serif font-bold text-zinc-900">₹12,85,000</p>
-              <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5" /> Texvalley Peak Record
+              <p className="text-3xl font-serif font-bold text-zinc-900">{adminOrders.length}</p>
+              <span className="text-xs text-zinc-400 font-bold">
+                {adminOrders.length === 0 ? "Your first order will appear here" : "Orders in fulfillment pipeline"}
               </span>
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-2">
               <div className="flex justify-between items-center text-xs font-bold text-zinc-400 uppercase">
-                <span>Conversion Rate</span>
+                <span>Customer Base</span>
                 <Sparkles className="w-4 h-4 text-[#C8A24D]" />
               </div>
-              <p className="text-3xl font-serif font-bold text-zinc-900">4.82%</p>
-              <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                Top 5% in Fashion E-Commerce
+              <p className="text-3xl font-serif font-bold text-zinc-900">0</p>
+              <span className="text-xs text-zinc-400 font-bold">
+                Live Texvalley customer accounts
               </span>
             </div>
           </div>
@@ -373,35 +355,44 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 font-medium">
-                {productList
-                  .filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                  .map((p) => (
-                    <tr key={p.id} className="hover:bg-zinc-50">
-                      <td className="py-3 px-2">
-                        <img src={p.images[0]} alt="" className="w-10 h-12 object-cover rounded-lg shadow-sm" />
-                      </td>
-                      <td className="py-3 px-2">
-                        <span className="font-bold text-zinc-900 block">{p.name}</span>
-                        <span className="text-[10px] text-zinc-400">SKU: {p.sku}</span>
-                      </td>
-                      <td className="py-3 px-2 uppercase font-bold text-zinc-500">{p.category}</td>
-                      <td className="py-3 px-2 font-bold text-zinc-900">₹{p.price}</td>
-                      <td className="py-3 px-2">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${p.stock > 10 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
-                          {p.stock} units
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 text-right">
-                        <button
-                          onClick={() => handleDeleteProduct(p.id)}
-                          className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors"
-                          title="Delete Product"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                {productList.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-zinc-400">
+                      <p className="text-sm font-serif font-bold text-zinc-700">No products have been added yet.</p>
+                      <p className="text-xs text-zinc-500 mt-1">Click &quot;Add Product&quot; above to add your first product to get started.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  productList
+                    .filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .map((p) => (
+                      <tr key={p.id} className="hover:bg-zinc-50">
+                        <td className="py-3 px-2">
+                          <img src={p.images[0]} alt="" className="w-10 h-12 object-cover rounded-lg shadow-sm" />
+                        </td>
+                        <td className="py-3 px-2">
+                          <span className="font-bold text-zinc-900 block">{p.name}</span>
+                          <span className="text-[10px] text-zinc-400">SKU: {p.sku}</span>
+                        </td>
+                        <td className="py-3 px-2 uppercase font-bold text-zinc-500">{p.category}</td>
+                        <td className="py-3 px-2 font-bold text-zinc-900">₹{p.price}</td>
+                        <td className="py-3 px-2">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${p.stock > 10 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
+                            {p.stock} units
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-right">
+                          <button
+                            onClick={() => handleDeleteProduct(p.id)}
+                            className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors"
+                            title="Delete Product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                )}
               </tbody>
             </table>
           </div>
@@ -428,31 +419,40 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 font-medium">
-                {adminOrders.map((o) => (
-                  <tr key={o.id} className="hover:bg-zinc-50">
-                    <td className="py-3.5 px-2 font-bold text-zinc-900">{o.id}</td>
-                    <td className="py-3.5 px-2">
-                      <span className="font-bold block text-zinc-900">{o.customer}</span>
-                      <span className="text-[10px] text-zinc-400">{o.phone}</span>
-                    </td>
-                    <td className="py-3.5 px-2 text-zinc-500">{o.date}</td>
-                    <td className="py-3.5 px-2 font-bold text-zinc-900">₹{o.total}</td>
-                    <td className="py-3.5 px-2 text-zinc-600">{o.payment}</td>
-                    <td className="py-3.5 px-2">
-                      <select
-                        value={o.status}
-                        onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-                        className="bg-zinc-100 border border-zinc-300 rounded-lg px-2 py-1 text-xs font-bold"
-                      >
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Processing">Processing</option>
-                        <option value="Shipped">Shipped</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </select>
+                {adminOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-zinc-400">
+                      <p className="text-sm font-serif font-bold text-zinc-700">Your first order will appear here.</p>
+                      <p className="text-xs text-zinc-500 mt-1">Orders placed by customers will automatically populate in real-time.</p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  adminOrders.map((o) => (
+                    <tr key={o.id} className="hover:bg-zinc-50">
+                      <td className="py-3.5 px-2 font-bold text-zinc-900">{o.id}</td>
+                      <td className="py-3.5 px-2">
+                        <span className="font-bold block text-zinc-900">{o.customer}</span>
+                        <span className="text-[10px] text-zinc-400">{o.phone}</span>
+                      </td>
+                      <td className="py-3.5 px-2 text-zinc-500">{o.date}</td>
+                      <td className="py-3.5 px-2 font-bold text-zinc-900">₹{o.total}</td>
+                      <td className="py-3.5 px-2 text-zinc-600">{o.payment}</td>
+                      <td className="py-3.5 px-2">
+                        <select
+                          value={o.status}
+                          onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+                          className="bg-zinc-100 border border-zinc-300 rounded-lg px-2 py-1 text-xs font-bold"
+                        >
+                          <option value="Confirmed">Confirmed</option>
+                          <option value="Processing">Processing</option>
+                          <option value="Shipped">Shipped</option>
+                          <option value="Delivered">Delivered</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useShop } from "@/context/ShopContext";
-import { STORE_INFO } from "@/data/store-info";
 import {
   Search,
   ShoppingBag,
@@ -11,10 +10,6 @@ import {
   User,
   Menu,
   X,
-  Phone,
-  MapPin,
-  ChevronDown,
-  Sparkles,
   LayoutDashboard
 } from "lucide-react";
 
@@ -24,16 +19,12 @@ export const Header: React.FC = () => {
     wishlist,
     setIsSearchOpen,
     role,
-    setRole,
-    currency,
-    setCurrency,
     user,
     logoutUser
   } = useShop();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [currencyDropdown, setCurrencyDropdown] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
 
   useEffect(() => {
@@ -48,70 +39,6 @@ export const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full transition-all duration-300">
-      {/* Top Announcement Bar */}
-      <div className="bg-[#111111] text-white text-xs py-2 px-4 border-b border-zinc-800 flex justify-between items-center">
-        <div className="hidden lg:flex items-center gap-4 text-zinc-300">
-          <span className="flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5 text-[#C8A24D]" />
-            Texvalley Global Market, Erode
-          </span>
-          <span>|</span>
-          <a href="tel:9442707630" className="flex items-center gap-1 hover:text-[#C8A24D] transition-colors">
-            <Phone className="w-3.5 h-3.5 text-[#C8A24D]" />
-            +91 9442707630
-          </a>
-        </div>
-
-        {/* Center Live Ticker */}
-        <div className="flex-1 text-center font-medium tracking-wide text-amber-200/90 truncate px-2 flex items-center justify-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-[#C8A24D] animate-spin" />
-          <span>FESTIVE SPECIAL: 15% OFF on Export Surplus | Code: EXPORT15</span>
-        </div>
-
-        <div className="flex items-center gap-4">
-          {/* Quick Role Switcher */}
-          <div className="flex items-center gap-1.5 bg-zinc-800 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border border-zinc-700">
-            <span className="text-zinc-400">View:</span>
-            <button
-              onClick={() => setRole(role === "Customer" ? "Admin" : "Customer")}
-              className="text-[#C8A24D] hover:underline font-bold flex items-center gap-1"
-            >
-              {role === "Customer" ? "Storefront" : "Shopify Admin"}
-              <LayoutDashboard className="w-3 h-3 ml-0.5" />
-            </button>
-          </div>
-
-          {/* Currency Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setCurrencyDropdown(!currencyDropdown)}
-              className="flex items-center gap-1 text-zinc-300 hover:text-white transition-colors"
-            >
-              <span>{currency.code} ({currency.symbol})</span>
-              <ChevronDown className="w-3 h-3" />
-            </button>
-
-            {currencyDropdown && (
-              <div className="absolute right-0 top-full mt-1 bg-[#111111] border border-zinc-800 rounded-lg shadow-xl py-1 z-50 w-28">
-                {STORE_INFO.currencies.map((c) => (
-                  <button
-                    key={c.code}
-                    onClick={() => {
-                      setCurrency(c);
-                      setCurrencyDropdown(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-[#C8A24D] flex justify-between"
-                  >
-                    <span>{c.code}</span>
-                    <span>{c.symbol}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Main Luxury Navigation Bar */}
       <nav
         className={`w-full transition-all duration-300 ${

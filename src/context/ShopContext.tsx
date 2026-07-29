@@ -51,8 +51,8 @@ interface ShopContextType {
   user: UserProfile | null;
   role: "Customer" | "Admin";
   setRole: (role: "Customer" | "Admin") => void;
-  currency: typeof STORE_INFO.currencies[0];
-  setCurrency: (currency: typeof STORE_INFO.currencies[0]) => void;
+  currency: typeof STORE_INFO.currency;
+  setCurrency: (currency: typeof STORE_INFO.currency) => void;
   
   // Cart Actions
   addToCart: (product: Product, size?: string, color?: string, qty?: number) => void;
@@ -106,16 +106,10 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [compareList, setCompareList] = useState<string[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<string[]>([]);
   const [role, setRole] = useState<"Customer" | "Admin">("Customer");
-  const [currency, setCurrency] = useState(STORE_INFO.currencies[0]);
+  const [currency, setCurrency] = useState({ code: "INR", symbol: "₹", label: "INR (₹)" });
 
   // User state
-  const [user, setUser] = useState<UserProfile | null>({
-    name: "Sivakumar P.",
-    email: "siva.texvalley@gmail.com",
-    phone: "+91 9442707630",
-    role: "Customer",
-    walletBalance: 450
-  });
+  const [user, setUser] = useState<UserProfile | null>(null);
 
   // Modals state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -123,38 +117,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Orders State with realistic initial order history
-  const [orders, setOrders] = useState<OrderItem[]>([
-    {
-      id: "ORD-94427",
-      date: "2026-07-25",
-      items: [
-        {
-          product: PRODUCTS[0],
-          selectedColor: "Obsidian Black",
-          selectedSize: "L",
-          quantity: 1
-        }
-      ],
-      subtotal: 1299,
-      discount: 130,
-      gst: 210,
-      shipping: 0,
-      total: 1379,
-      status: "Shipped",
-      trackingNumber: "BD-982144321IN",
-      shippingAddress: {
-        fullName: "Sivakumar P.",
-        phone: "9442707630",
-        addressLine: "55, Ground Floor, Global Market, Texvalley",
-        city: "Erode",
-        state: "Tamil Nadu",
-        pincode: "638102"
-      },
-      paymentMethod: "Razorpay UPI",
-      paymentStatus: "Paid"
-    }
-  ]);
+  // Orders State (Clean 0 initial orders)
+  const [orders, setOrders] = useState<OrderItem[]>([]);
 
   // Fetch Live Data from Supabase Database
   useEffect(() => {
